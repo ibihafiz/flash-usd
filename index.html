@@ -5,8 +5,16 @@
   <title>Flash USDT Mint (Shasta Testnet)</title>
   <script src="https://cdn.jsdelivr.net/npm/tronweb@4.1.0/dist/TronWeb.js"></script>
   <style>
-    body { background-color: #121212; color: #eee; padding: 20px; font-family: sans-serif; }
-    input, button { padding: 8px; margin: 8px 0; }
+    body {
+      background-color: #121212;
+      color: #eee;
+      padding: 20px;
+      font-family: sans-serif;
+    }
+    input, button {
+      padding: 8px;
+      margin: 8px 0;
+    }
   </style>
 </head>
 <body>
@@ -22,7 +30,7 @@
   <button id="mintBtn">Mint Flash USDT</button>
 
   <script>
-    const CONTRACT_ADDRESS = "TVFyaRopHyYZvSL6QYaDZ1ASpG3QZY5NUg"; // ✅ Fresh contract address
+    const CONTRACT_ADDRESS = "TVFyaRopHyYZvSL6QYaDZ1ASpG3QZY5NUg"; // ✅ Fresh deployed testnet contract
 
     let tronWeb = null;
     let contract = null;
@@ -30,31 +38,42 @@
 
     async function connectWallet() {
       if (!window.tronLink) {
-        alert("TronLink not installed!");
+        alert("❌ TronLink extension not found.");
         return;
       }
 
       try {
         await window.tronLink.request({ method: 'tron_requestAccounts' });
 
+        // ✅ Wait until tronWeb is injected
+        for (let i = 0; i < 10; i++) {
+          if (window.tronWeb && window.tronWeb.defaultAddress.base58 !== '') {
+            break;
+          }
+          console.log("⏳ Waiting for TronWeb...");
+          await new Promise(res => setTimeout(res, 500));
+        }
+
         tronWeb = window.tronWeb;
-        if (!tronWeb || !tronWeb.defaultAddress.base58) {
-          alert("TronWeb not ready. Please unlock wallet and try again.");
+        if (!tronWeb.defaultAddress.base58) {
+          alert("❌ Wallet not ready. Please unlock TronLink.");
           return;
         }
 
         currentAddress = tronWeb.defaultAddress.base58;
         document.getElementById("walletAddress").textContent = "🔌 Wallet: " + currentAddress;
 
+        // ✅ Try loading contract
         try {
           contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
-          console.log("✅ Connected to contract.");
+          console.log("✅ Contract loaded successfully.");
           document.getElementById("connectBtn").style.display = "none";
-        } catch (err) {
+        } catch (contractErr) {
           alert("❌ Failed to load contract. Are you on Shasta Testnet?");
-          console.error("Contract load error:", err);
+          console.error(contractErr);
           contract = null;
         }
+
       } catch (err) {
         alert("❌ Wallet connection failed.");
         console.error(err);
@@ -69,11 +88,11 @@
 
       const amount = document.getElementById("mintAmount").value;
       if (!amount || isNaN(amount) || amount <= 0) {
-        alert("❗ Enter a valid amount to mint.");
+        alert("❗ Please enter a valid mint amount.");
         return;
       }
 
-      const expiry = Math.floor(Date.now() / 1000) + 3600; // 1 hour expiry
+      const expiry = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
 
       try {
         const tx = await contract.mintWithExpiry(currentAddress, tronWeb.toSun(amount), expiry).send();
