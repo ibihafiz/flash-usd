@@ -30,7 +30,7 @@
   <button id="mintBtn">Mint Flash USDT</button>
 
   <script>
-    const CONTRACT_ADDRESS = "TVFyaRopHyYZvSL6QYaDZ1ASpG3QZY5NUg"; // ✅ Fresh deployed testnet contract
+    const CONTRACT_ADDRESS = "TGCsXPFGqUzkXRcujv38to7aHZcYvsZ24s"; // ✅ Your live contract
 
     let tronWeb = null;
     let contract = null;
@@ -45,11 +45,8 @@
       try {
         await window.tronLink.request({ method: 'tron_requestAccounts' });
 
-        // ✅ Wait until tronWeb is injected
         for (let i = 0; i < 10; i++) {
-          if (window.tronWeb && window.tronWeb.defaultAddress.base58 !== '') {
-            break;
-          }
+          if (window.tronWeb && window.tronWeb.defaultAddress.base58 !== '') break;
           console.log("⏳ Waiting for TronWeb...");
           await new Promise(res => setTimeout(res, 500));
         }
@@ -63,14 +60,13 @@
         currentAddress = tronWeb.defaultAddress.base58;
         document.getElementById("walletAddress").textContent = "🔌 Wallet: " + currentAddress;
 
-        // ✅ Try loading contract
         try {
           contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
-          console.log("✅ Contract loaded successfully.");
+          console.log("✅ Contract loaded.");
           document.getElementById("connectBtn").style.display = "none";
-        } catch (contractErr) {
+        } catch (err) {
           alert("❌ Failed to load contract. Are you on Shasta Testnet?");
-          console.error(contractErr);
+          console.error(err);
           contract = null;
         }
 
@@ -88,16 +84,16 @@
 
       const amount = document.getElementById("mintAmount").value;
       if (!amount || isNaN(amount) || amount <= 0) {
-        alert("❗ Please enter a valid mint amount.");
+        alert("❗ Please enter a valid amount.");
         return;
       }
 
-      const expiry = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+      const expiry = Math.floor(Date.now() / 1000) + 3600; // 1 hour expiry
 
       try {
         const tx = await contract.mintWithExpiry(currentAddress, tronWeb.toSun(amount), expiry).send();
         console.log("✅ Mint TX:", tx);
-        alert("✅ Minted " + amount + " Flash USDT successfully!");
+        alert("✅ Minted " + amount + " USDT successfully!");
       } catch (e) {
         console.error(e);
         alert("❌ Transaction failed: " + (e.message || "Unknown error"));
