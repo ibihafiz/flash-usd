@@ -6,13 +6,16 @@
     <title>Flash USDT (Testnet)</title>
     <script src="https://cdn.jsdelivr.net/npm/tronweb@4.1.0/dist/TronWeb.js"></script>
 </head>
-<body>
-    <h1>Flash USDT (Shasta Testnet)</h1>
+<body style="background-color:#222;color:white;padding:20px;font-family:sans-serif;">
 
+    <h1>Flash USDT (Shasta Testnet)</h1>
     <p id="walletAddress">Not connected</p>
-    <button id="connectBtn">Connect TronLink</button>
-    <br><br>
-    <button id="mintBtn">Mint 100 Flash USDT</button>
+
+    <button id="connectBtn">🔌 Connect TronLink</button>
+
+    <h3>💰 Mint Flash USDT</h3>
+    <input type="number" id="mintAmount" placeholder="Enter amount to mint" style="padding:5px;">
+    <button id="mintBtn">Mint Flash USDT</button>
 
     <script>
         const CONTRACT_ADDRESS = "TQ1wNmuBGDzhJKxGsHWVDuMB7GmMpT4KcT";
@@ -26,7 +29,7 @@
                     await window.tronLink.request({ method: 'tron_requestAccounts' });
 
                     if (!window.tronWeb || !window.tronWeb.defaultAddress.base58) {
-                        alert("TronWeb not fully loaded. Please wait a few seconds and try again.");
+                        alert("TronWeb not fully loaded. Please wait and try again.");
                         return;
                     }
 
@@ -35,28 +38,37 @@
                     document.getElementById("walletAddress").textContent = "Connected: " + currentAddress;
 
                     contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
-
                     console.log("Wallet connected & contract loaded.");
                 } catch (err) {
                     alert("Wallet access denied or not available.");
                     console.error(err);
                 }
             } else {
-                alert("TronLink extension not detected. Please install TronLink and try again.");
+                alert("TronLink not detected. Install it first.");
             }
         }
 
         async function mintToken() {
-            if (!contract || !currentAddress) {
-                alert("Please connect wallet first.");
+            if (!window.tronLink || !window.tronWeb) {
+                alert("TronLink not available.");
                 return;
             }
 
-            const expiry = Math.floor(Date.now() / 1000) + 3600;
-
             try {
-                await contract.mintWithExpiry(currentAddress, tronWeb.toSun(100), expiry).send();
-                alert("Minted 100 Flash USDT (testnet)");
+                await window.tronLink.request({ method: 'tron_requestAccounts' });
+                const tronWeb = window.tronWeb;
+                const currentAddress = tronWeb.defaultAddress.base58;
+                const contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
+
+                const amount = document.getElementById("mintAmount").value;
+                if (!amount || isNaN(amount) || amount <= 0) {
+                    alert("Please enter a valid amount to mint.");
+                    return;
+                }
+
+                const expiry = Math.floor(Date.now() / 1000) + 3600; // 1 hour
+                await contract.mintWithExpiry(currentAddress, tronWeb.toSun(amount), expiry).send();
+                alert("Minted " + amount + " USDT (Flash)");
             } catch (e) {
                 alert("Transaction failed: " + e.message);
                 console.error(e);
