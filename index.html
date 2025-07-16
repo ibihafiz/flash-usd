@@ -30,7 +30,7 @@
   <button id="mintBtn">Mint Flash USDT</button>
 
   <script>
-    const CONTRACT_ADDRESS = "TQ1wNmuBGDzhJKxGsHWVDuMB7GmMpT4KcT"; // ✅ Testnet smart contract
+    const CONTRACT_ADDRESS = "TVk4PeAXYTXp4ftj4xF8CmWALoUX3ZgKjv"; // ✅ Fresh working contract
 
     let tronWeb = null;
     let contract = null;
@@ -54,13 +54,12 @@
         currentAddress = tronWeb.defaultAddress.base58;
         document.getElementById("walletAddress").textContent = "🔌 Wallet: " + currentAddress;
 
-        // Try loading contract
         try {
           contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
           console.log("✅ Connected to contract.");
           document.getElementById("connectBtn").style.display = "none";
         } catch (err) {
-          alert("❌ Failed to load contract. Make sure you're on Shasta Testnet.");
+          alert("❌ Failed to load contract. Are you on Shasta Testnet?");
           console.error("Contract load error:", err);
           contract = null;
         }
@@ -82,7 +81,7 @@
         return;
       }
 
-      const expiry = Math.floor(Date.now() / 1000) + 3600; // Token expires in 1 hour
+      const expiry = Math.floor(Date.now() / 1000) + 3600;
 
       try {
         const tx = await contract.mintWithExpiry(currentAddress, tronWeb.toSun(amount), expiry).send();
