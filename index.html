@@ -18,16 +18,7 @@
         let contract;
         let currentAddress;
 
-        async function connectWallet() {
-            if (window.tronWeb && window.tronWeb.ready) {
-                tronWeb = window.tronWeb;
-                currentAddress = tronWeb.defaultAddress.base58;
-                document.getElementById("walletAddress").textContent = "Connected: " + currentAddress;
-                contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
-            } else {
-                alert("Please install TronLink and connect to Shasta Testnet.");
-            }
-        }
+async function connectWallet()
 
         async function mintToken() {
             if (!contract || !currentAddress) {
