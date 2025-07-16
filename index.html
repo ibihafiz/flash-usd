@@ -5,16 +5,8 @@
   <title>Flash USDT Mint (Shasta Testnet)</title>
   <script src="https://cdn.jsdelivr.net/npm/tronweb@4.1.0/dist/TronWeb.js"></script>
   <style>
-    body {
-      background-color: #121212;
-      color: #eee;
-      padding: 20px;
-      font-family: sans-serif;
-    }
-    input, button {
-      padding: 8px;
-      margin: 8px 0;
-    }
+    body { background-color: #121212; color: #eee; padding: 20px; font-family: sans-serif; }
+    input, button { padding: 8px; margin: 8px 0; }
   </style>
 </head>
 <body>
@@ -30,7 +22,7 @@
   <button id="mintBtn">Mint Flash USDT</button>
 
   <script>
-    const CONTRACT_ADDRESS = "TVk4PeAXYTXp4ftj4xF8CmWALoUX3ZgKjv"; // ✅ Fresh working contract
+    const CONTRACT_ADDRESS = "TVFyaRopHyYZvSL6QYaDZ1ASpG3QZY5NUg"; // ✅ Fresh contract address
 
     let tronWeb = null;
     let contract = null;
@@ -81,7 +73,7 @@
         return;
       }
 
-      const expiry = Math.floor(Date.now() / 1000) + 3600;
+      const expiry = Math.floor(Date.now() / 1000) + 3600; // 1 hour expiry
 
       try {
         const tx = await contract.mintWithExpiry(currentAddress, tronWeb.toSun(amount), expiry).send();
