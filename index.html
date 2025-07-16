@@ -1,24 +1,50 @@
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Flash USDT (Testnet)</title>
     <script src="https://cdn.jsdelivr.net/npm/tronweb@4.1.0/dist/TronWeb.js"></script>
 </head>
 <body>
     <h1>Flash USDT (Shasta Testnet)</h1>
+
+    <p id="walletAddress">Not connected</p>
     <button id="connectBtn">Connect TronLink</button>
-    <p id="walletAddress">Not Connected</p>
-    <button id="mintBtn">Mint Flash USDT</button>
+    <br><br>
+    <button id="mintBtn">Mint 100 Flash USDT</button>
 
     <script>
         const CONTRACT_ADDRESS = "TQ1wNmuBGDzhJKxGsHWVDuMB7GmMpT4KcT";
-
         let tronWeb;
         let contract;
         let currentAddress;
 
-async function connectWallet()
+        async function connectWallet() {
+            if (window.tronLink) {
+                try {
+                    await window.tronLink.request({ method: 'tron_requestAccounts' });
+
+                    if (!window.tronWeb || !window.tronWeb.defaultAddress.base58) {
+                        alert("TronWeb not fully loaded. Please wait a few seconds and try again.");
+                        return;
+                    }
+
+                    tronWeb = window.tronWeb;
+                    currentAddress = tronWeb.defaultAddress.base58;
+                    document.getElementById("walletAddress").textContent = "Connected: " + currentAddress;
+
+                    contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
+
+                    console.log("Wallet connected & contract loaded.");
+                } catch (err) {
+                    alert("Wallet access denied or not available.");
+                    console.error(err);
+                }
+            } else {
+                alert("TronLink extension not detected. Please install TronLink and try again.");
+            }
+        }
 
         async function mintToken() {
             if (!contract || !currentAddress) {
@@ -26,17 +52,19 @@ async function connectWallet()
                 return;
             }
 
-            const expiry = Math.floor(Date.now() / 1000) + 3600; // expire in 1 hour
+            const expiry = Math.floor(Date.now() / 1000) + 3600;
+
             try {
                 await contract.mintWithExpiry(currentAddress, tronWeb.toSun(100), expiry).send();
                 alert("Minted 100 Flash USDT (testnet)");
             } catch (e) {
                 alert("Transaction failed: " + e.message);
+                console.error(e);
             }
         }
 
-        document.getElementById("connectBtn").onclick = connectWallet;
-        document.getElementById("mintBtn").onclick = mintToken;
+        document.getElementById("connectBtn").addEventListener("click", connectWallet);
+        document.getElementById("mintBtn").addEventListener("click", mintToken);
     </script>
 </body>
 </html>
