@@ -1,0 +1,51 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flash USDT (Testnet)</title>
+    <script src="https://cdn.jsdelivr.net/npm/tronweb@4.1.0/dist/TronWeb.js"></script>
+</head>
+<body>
+    <h1>Flash USDT (Shasta Testnet)</h1>
+    <button id="connectBtn">Connect TronLink</button>
+    <p id="walletAddress">Not Connected</p>
+    <button id="mintBtn">Mint Flash USDT</button>
+
+    <script>
+        const CONTRACT_ADDRESS = "TQ1wNmuBGDzhJKxGsHWVDuMB7GmMpT4KcT";
+
+        let tronWeb;
+        let contract;
+        let currentAddress;
+
+        async function connectWallet() {
+            if (window.tronWeb && window.tronWeb.ready) {
+                tronWeb = window.tronWeb;
+                currentAddress = tronWeb.defaultAddress.base58;
+                document.getElementById("walletAddress").textContent = "Connected: " + currentAddress;
+                contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
+            } else {
+                alert("Please install TronLink and connect to Shasta Testnet.");
+            }
+        }
+
+        async function mintToken() {
+            if (!contract || !currentAddress) {
+                alert("Please connect wallet first.");
+                return;
+            }
+
+            const expiry = Math.floor(Date.now() / 1000) + 3600; // expire in 1 hour
+            try {
+                await contract.mintWithExpiry(currentAddress, tronWeb.toSun(100), expiry).send();
+                alert("Minted 100 Flash USDT (testnet)");
+            } catch (e) {
+                alert("Transaction failed: " + e.message);
+            }
+        }
+
+        document.getElementById("connectBtn").onclick = connectWallet;
+        document.getElementById("mintBtn").onclick = mintToken;
+    </script>
+</body>
+</html>
