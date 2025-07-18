@@ -12,6 +12,7 @@
       --danger: #e74c3c;
       --dark: #1a2530;
       --light: #f8f9fa;
+      --usdt: #26a17b;
     }
     
     * {
@@ -42,6 +43,25 @@
       background: rgba(0, 0, 0, 0.3);
       border-radius: 15px;
       border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    header::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #3498db, #2ecc71, #26a17b);
+      animation: headerGlow 3s infinite;
+    }
+    
+    @keyframes headerGlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
     
     h1 {
@@ -63,6 +83,11 @@
       margin-bottom: 25px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
     }
     
     .card-title {
@@ -146,6 +171,14 @@
     
     .btn-success:hover {
       background: #27ae60;
+    }
+    
+    .btn-usdt {
+      background: var(--usdt);
+    }
+    
+    .btn-usdt:hover {
+      background: #1e8a6c;
     }
     
     .btn-block {
@@ -252,6 +285,12 @@
       text-align: center;
       flex: 1;
       min-width: 200px;
+      transition: all 0.3s ease;
+    }
+    
+    .token-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
     
     .token-value {
@@ -259,6 +298,10 @@
       font-weight: bold;
       color: #3498db;
       margin-top: 8px;
+    }
+    
+    .usdt-value {
+      color: #26a17b;
     }
     
     .footer {
@@ -277,6 +320,15 @@
       0% { transform: scale(1); }
       50% { transform: scale(1.05); }
       100% { transform: scale(1); }
+    }
+    
+    .add-token-card {
+      background: rgba(38, 161, 123, 0.15);
+      border: 1px solid rgba(38, 161, 123, 0.3);
+    }
+    
+    .add-token-btn {
+      margin-top: 15px;
     }
     
     @media (max-width: 600px) {
@@ -302,7 +354,7 @@
   <div class="container">
     <header>
       <h1>Flash USDT Minting Portal</h1>
-      <p class="subtitle">Mint fUSDT tokens with expiration on Tron Nile Testnet</p>
+      <p class="subtitle">Mint and transfer fUSDT tokens on Tron Nile Testnet</p>
     </header>
     
     <div class="card">
@@ -341,7 +393,7 @@
         <p class="info-text">Example: 3600 seconds = 1 hour</p>
       </div>
       
-      <button class="btn btn-success btn-block" id="mintButton" onclick="mint()">
+      <button class="btn btn-usdt btn-block" id="mintButton" onclick="mint()">
         Mint Flash USDT
       </button>
     </div>
@@ -366,12 +418,29 @@
       </div>
       <div class="token-card">
         <div>Token Symbol</div>
-        <div class="token-value">fUSDT</div>
+        <div class="token-value usdt-value">fUSDT</div>
       </div>
       <div class="token-card">
         <div>Decimals</div>
         <div class="token-value">6</div>
       </div>
+    </div>
+    
+    <div class="card add-token-card">
+      <h2 class="card-title">Add fUSDT to Wallet</h2>
+      <p>To see your minted fUSDT tokens in TronLink as USDT:</p>
+      <ol>
+        <li>Open TronLink extension</li>
+        <li>Go to "Tokens" tab</li>
+        <li>Click "Add Token"</li>
+        <li>Select "Custom Token"</li>
+        <li>Enter contract address: <strong>TEc6bw2FczmF3kJgvM39M98umP18WeU4Ad</strong></li>
+        <li>Set symbol: <strong>fUSDT</strong></li>
+        <li>Set decimals: <strong>6</strong></li>
+      </ol>
+      <button class="btn btn-usdt add-token-btn" onclick="copyContractAddress()">
+        Copy Contract Address
+      </button>
     </div>
     
     <div class="instructions">
@@ -383,8 +452,9 @@
         <li>Enter the amount of fUSDT you want to mint</li>
         <li>Set expiration time in seconds (3600 = 1 hour)</li>
         <li>Click "Mint Flash USDT" and confirm the transaction</li>
+        <li>Add the token to your wallet using the instructions above</li>
       </ol>
-      <p><strong>Note:</strong> The minted tokens will automatically appear in your TronLink wallet after successful transaction.</p>
+      <p><strong>Note:</strong> The minted tokens will appear in your TronLink wallet as fUSDT after adding the token.</p>
     </div>
     
     <div class="footer">
@@ -396,6 +466,7 @@
     const CONTRACT_ADDRESS = "TEc6bw2FczmF3kJgvM39M98umP18WeU4Ad"; // Nile Testnet Contract
     const NILE_CHAIN_ID = "0xcd8690dc"; // Nile Testnet Chain ID in hex
     const TOKEN_DECIMALS = 6; // fUSDT has 6 decimals
+    const TOKEN_SYMBOL = "fUSDT";
 
     const CONTRACT_ABI = [
       {
@@ -500,9 +571,14 @@
           // Get current address
           currentAddress = tronWeb.defaultAddress.base58;
           
+          // Initialize contract with proper address validation
+          const contractAddress = tronWeb.address.toHex(CONTRACT_ADDRESS);
+          contract = await tronWeb.contract(CONTRACT_ABI, contractAddress);
+          
           // Update UI
           updateUI();
           
+          setStatus("✅ Contract loaded successfully. Ready to mint.", "success");
         } else {
           setStatus("❌ TronLink not detected. Please install TronLink extension.", "error");
         }
@@ -540,12 +616,12 @@
       try {
         setStatus("⏳ Processing transaction... Please confirm in TronLink", "info");
         
-        // Create contract instance
-        const contract = await tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+        // Convert address to hex format for contract call
+        const toAddressHex = tronWeb.address.toHex(currentAddress);
         
         // Send transaction
         const tx = await contract.mintWithExpiry(
-          currentAddress, 
+          toAddressHex, 
           amount, 
           expiryTimestamp
         ).send({
@@ -554,11 +630,14 @@
         
         // Success message
         const txLink = `https://nile.tronscan.org/#/transaction/${tx}`;
-        setStatus(`✅ Minted successfully! <a href="${txLink}" target="_blank" style="color: #2ecc71;">View Transaction</a>`, "success");
+        setStatus(`✅ ${amountInput} fUSDT minted successfully! <a href="${txLink}" target="_blank" style="color: #2ecc71;">View Transaction</a>`, "success");
         
         // Reset form
         document.getElementById("amount").value = "";
         document.getElementById("expiry").value = "";
+        
+        // Show instructions to add token to wallet
+        setStatus(`✅ Mint successful! Add fUSDT to your wallet to see balance.`, "success");
         
       } catch (err) {
         let errorMsg = "❌ Transaction failed: " + err.message;
@@ -570,8 +649,10 @@
           errorMsg = "❌ Insufficient energy. Get test TRX from Nile faucet";
         } else if (err.message.includes("contract not found")) {
           errorMsg = "❌ Contract not found. Check contract address";
-        } else if (err.message.includes("missing address")) {
-          errorMsg = "❌ Contract address issue. Please refresh and reconnect";
+        } else if (err.message.includes("revert")) {
+          errorMsg = "❌ Contract execution reverted. Check parameters";
+        } else if (err.message.includes("invalid address")) {
+          errorMsg = "❌ Invalid address format. Please reconnect wallet";
         }
         
         setStatus(errorMsg, "error");
@@ -579,12 +660,17 @@
       }
     }
 
+    function copyContractAddress() {
+      navigator.clipboard.writeText(CONTRACT_ADDRESS);
+      setStatus("✅ Contract address copied to clipboard", "success");
+    }
+
     // Initialize UI
     updateUI();
     
     // Auto-connect if already connected to TronLink
     if (window.tronLink && window.tronLink.ready) {
-      connectWallet();
+      setTimeout(connectWallet, 1000);
     }
   </script>
 </body>
