@@ -61,18 +61,24 @@
         return;
       }
 
-      const amount = document.getElementById("amount").value;
-      const expiryInput = document.getElementById("expiry").value;
+      const amountRaw = document.getElementById("amount").value;
+      const expiryRaw = document.getElementById("expiry").value;
 
-      if (!amount || !expiryInput) {
+      if (!amountRaw || !expiryRaw) {
         document.getElementById("status").textContent = "❌ Please enter both amount and expiry.";
         return;
       }
 
-      const expiryTimestamp = Math.floor(Date.now() / 1000) + parseInt(expiryInput);
+      const amount = parseInt(amountRaw);
+      const expirySeconds = parseInt(expiryRaw);
+      const expiryTimestamp = Math.floor(Date.now() / 1000) + expirySeconds;
 
       try {
-        const tx = await contract.mintWithExpiry(currentAddress, parseInt(amount), expiryTimestamp).send({
+        const tx = await contract.methods["mintWithExpiry(address,uint256,uint256)"](
+          currentAddress,
+          amount,
+          expiryTimestamp
+        ).send({
           feeLimit: 100000000
         });
         document.getElementById("status").textContent = "✅ Minted successfully! TX: " + tx;
