@@ -1,62 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Flash USDT Portal</title>
+  <meta charset="UTF-8">
+  <title>Flash USDT Minting Portal</title>
 </head>
 <body>
-    <h2>Flash USDT Minting</h2>
+  <h2>Flash USDT Minting Portal</h2>
 
-    <button onclick="connectWallet()">Connect Wallet</button>
-    <p id="walletAddress">Wallet not connected</p>
+  <button onclick="connectWallet()">Connect Wallet</button>
+  <p id="walletAddress">Wallet not connected</p>
 
-    <input type="number" id="amount" placeholder="Amount to Mint">
-    <input type="number" id="expiry" placeholder="Expiry in seconds">
-    <button onclick="mint()">Mint Flash USDT</button>
+  <input type="number" id="amount" placeholder="Amount to Mint">
+  <input type="number" id="expiry" placeholder="Expiry (in seconds)">
+  <button onclick="mint()">Mint Flash USDT</button>
 
-    <p id="status"></p>
+  <p id="status"></p>
 
-    <script>
-        const CONTRACT_ADDRESS = "TVvVdAasZ39nyApMj6cMuEzrkNmwR5yyPV"; // deployed on Shasta
-        let tronWeb;
-        let currentAddress;
-        let contract;
+  <script>
+    const CONTRACT_ADDRESS = "TEc6bw2FczmF3kJgvM39M98umP18WeU4Ad"; // Nile Testnet Contract
 
-        async function connectWallet() {
-            if (window.tronLink) {
-                try {
-                    await window.tronLink.request({ method: 'tron_requestAccounts' });
-                    tronWeb = window.tronWeb;
-                    currentAddress = tronWeb.defaultAddress.base58;
-                    document.getElementById("walletAddress").textContent = "Connected: " + currentAddress;
-                    contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
-                    document.getElementById("status").textContent = "✅ Wallet connected & contract loaded";
-                } catch (err) {
-                    document.getElementById("status").textContent = "❌ Error loading contract: " + err.message;
-                }
-            } else {
-                alert("TronLink not detected. Please install or enable it.");
-            }
+    const CONTRACT_ABI = [
+      {
+        "inputs": [
+          { "internalType": "address", "name": "to", "type": "address" },
+          { "internalType": "uint256", "name": "amount", "type": "uint256" },
+          { "internalType": "uint256", "name": "expiry", "type": "uint256" }
+        ],
+        "name": "mintWithExpiry",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ];
+
+    let tronWeb;
+    let currentAddress;
+    let contract;
+
+    async function connectWallet() {
+      try {
+        if (window.tronLink) {
+          await window.tronLink.request({ method: 'tron_requestAccounts' });
+          tronWeb = window.tronWeb;
+          currentAddress = tronWeb.defaultAddress.base58;
+          document.getElementById("walletAddress").textContent = "Connected: " + currentAddress;
+
+          contract = await tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+          document.getElementById("status").textContent = "✅ Wallet connected & contract loaded";
+        } else {
+          alert("TronLink not detected. Please install TronLink extension.");
         }
+      } catch (e) {
+        document.getElementById("status").textContent = "❌ Failed to load contract: " + e.message;
+      }
+    }
 
-        async function mint() {
-            if (!tronWeb || !contract) {
-                document.getElementById("status").textContent = "❌ Wallet not connected or contract not loaded.";
-                return;
-            }
+    async function mint() {
+      if (!tronWeb || !contract) {
+        document.getElementById("status").textContent = "❌ Wallet not connected or contract not loaded.";
+        return;
+      }
 
-            const amount = document.getElementById("amount").value;
-            const expirySeconds = document.getElementById("expiry").value;
-            const expiryTimestamp = Math.floor(Date.now() / 1000) + parseInt(expirySeconds);
+      const amount = document.getElementById("amount").value;
+      const expiry = parseInt(document.getElementById("expiry").value);
+      const expiryTimestamp = Math.floor(Date.now() / 1000) + expiry;
 
-            try {
-                const tx = await contract.mintWithExpiry(currentAddress, amount, expiryTimestamp).send({
-                    feeLimit: 100000000
-                });
-                document.getElementById("status").textContent = "✅ Minted successfully. TX: " + tx;
-            } catch (err) {
-                document.getElementById("status").textContent = "❌ Transaction failed: " + err.message;
-            }
-        }
-    </script>
+      try {
+        const tx = await contract.mintWithExpiry(currentAddress, amount, expiryTimestamp).send({
+          feeLimit: 100000000
+        });
+        document.getElementById("status").textContent = "✅ Minted successfully! TX: " + tx;
+      } catch (err) {
+        document.getElementById("status").textContent = "❌ Transaction failed: " + err.message;
+      }
+    }
+  </script>
 </body>
 </html>
