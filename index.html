@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,7 +13,11 @@
 
   <input type="number" id="amount" placeholder="Amount to Mint">
   <input type="number" id="expiry" placeholder="Expiry (in seconds)">
-  <button onclick="mint()">Mint & Transfer</button>
+  <button onclick="mint()">Mint Flash USDT</button>
+
+  <input type="text" id="recipient" placeholder="Recipient Address">
+  <input type="number" id="transferAmount" placeholder="Amount to Transfer">
+  <button onclick="transfer()">Transfer Flash USDT</button>
 
   <p id="status"></p>
 
@@ -72,34 +77,38 @@
       }
 
       const amount = parseInt(document.getElementById("amount").value);
-      const expirySeconds = parseInt(document.getElementById("expiry").value);
-
-      if (isNaN(amount) || isNaN(expirySeconds)) {
-        document.getElementById("status").textContent = "❌ Enter valid amount and expiry.";
-        return;
-      }
-
-      const expiryTimestamp = Math.floor(Date.now() / 1000) + expirySeconds;
+      const expiry = parseInt(document.getElementById("expiry").value);
+      const expiryTimestamp = Math.floor(Date.now() / 1000) + expiry;
 
       try {
-        const mintTx = await contract.mintWithExpiry(currentAddress, amount, expiryTimestamp).send({
+        const tx = await contract.mintWithExpiry(currentAddress, amount, expiryTimestamp).send({
           feeLimit: 100000000
         });
-        document.getElementById("status").textContent = "✅ Minted! TX: " + mintTx;
-
-        // Auto transfer to same wallet
-        await transfer(currentAddress, amount);
+        document.getElementById("status").textContent = "✅ Minted successfully! TX: " + tx;
       } catch (err) {
         document.getElementById("status").textContent = "❌ Transaction failed: " + err.message;
       }
     }
 
-    async function transfer(to, amount) {
+    async function transfer() {
+      if (!tronWeb || !contract) {
+        document.getElementById("status").textContent = "❌ Wallet not connected or contract not loaded.";
+        return;
+      }
+
+      const recipient = document.getElementById("recipient").value;
+      const amount = parseInt(document.getElementById("transferAmount").value);
+
+      if (!tronWeb.isAddress(recipient)) {
+        document.getElementById("status").textContent = "❌ Invalid recipient address.";
+        return;
+      }
+
       try {
-        const tx = await contract.transfer(to, amount).send({
+        const tx = await contract.transfer(recipient, amount).send({
           feeLimit: 100000000
         });
-        document.getElementById("status").textContent += `\n✅ Transferred! TX: ${tx}`;
+        document.getElementById("status").textContent = "✅ Transferred successfully! TX: " + tx;
       } catch (err) {
         document.getElementById("status").textContent = "❌ Transfer failed: " + err.message;
       }
