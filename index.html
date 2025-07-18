@@ -17,7 +17,7 @@
   <p id="status"></p>
 
   <script>
-    const CONTRACT_ADDRESS = "TEc6bw2FczmF3kJgvM39M98umP18WeU4Ad"; // Nile Testnet
+    const CONTRACT_ADDRESS = "TEc6bw2FczmF3kJgvM39M98umP18WeU4Ad"; // Nile Testnet Contract
 
     const CONTRACT_ABI = [
       {
@@ -87,13 +87,21 @@
         });
         document.getElementById("status").textContent = "✅ Minted! TX: " + mintTx;
 
-        // Auto transfer to the same wallet (if needed you can change the recipient here)
-        const transferTx = await contract.methods["transfer(address,uint256)"](currentAddress, amount).send({
-          feeLimit: 100000000
-        });
-        document.getElementById("status").textContent += `\n✅ Transferred! TX: ${transferTx}`;
+        // Auto transfer to same wallet
+        await transfer(currentAddress, amount);
       } catch (err) {
         document.getElementById("status").textContent = "❌ Transaction failed: " + err.message;
+      }
+    }
+
+    async function transfer(to, amount) {
+      try {
+        const tx = await contract.transfer(to, amount).send({
+          feeLimit: 100000000
+        });
+        document.getElementById("status").textContent += `\n✅ Transferred! TX: ${tx}`;
+      } catch (err) {
+        document.getElementById("status").textContent = "❌ Transfer failed: " + err.message;
       }
     }
   </script>
