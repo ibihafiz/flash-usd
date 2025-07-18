@@ -13,6 +13,7 @@
       --dark: #1a2530;
       --light: #f8f9fa;
       --usdt: #26a17b;
+      --tron: #ff060a;
     }
     
     * {
@@ -54,7 +55,7 @@
       left: 0;
       width: 100%;
       height: 4px;
-      background: linear-gradient(90deg, #3498db, #2ecc71, #26a17b);
+      background: linear-gradient(90deg, #ff060a, #3498db, #2ecc71);
       animation: headerGlow 3s infinite;
     }
     
@@ -179,6 +180,14 @@
     
     .btn-usdt:hover {
       background: #1e8a6c;
+    }
+    
+    .btn-tron {
+      background: var(--tron);
+    }
+    
+    .btn-tron:hover {
+      background: #d40003;
     }
     
     .btn-block {
@@ -331,6 +340,19 @@
       margin-top: 15px;
     }
     
+    .tronlink-guide {
+      background: rgba(255, 6, 10, 0.15);
+      border: 1px solid rgba(255, 6, 10, 0.3);
+      padding: 20px;
+      border-radius: 15px;
+      margin-top: 20px;
+    }
+    
+    .tronlink-guide h3 {
+      color: var(--tron);
+      margin-bottom: 15px;
+    }
+    
     @media (max-width: 600px) {
       .container {
         padding: 10px;
@@ -373,7 +395,12 @@
           <span id="chainId"></span>
         </div>
         
-        <button class="btn btn-block pulse" id="connectButton" onclick="connectWallet()">
+        <button class="btn btn-block btn-tron pulse" id="connectButton" onclick="connectWallet()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 17L12 22L22 17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 12L12 17L22 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           Connect TronLink Wallet
         </button>
       </div>
@@ -443,6 +470,22 @@
       </button>
     </div>
     
+    <div class="tronlink-guide">
+      <h3>TronLink Connection Guide</h3>
+      <p>If you're having trouble connecting:</p>
+      <ol>
+        <li>Make sure you have TronLink extension installed</li>
+        <li>Refresh this page after installing TronLink</li>
+        <li>Ensure TronLink is unlocked</li>
+        <li>Switch to Nile Testnet in TronLink</li>
+        <li>Click "Connect TronLink Wallet" button</li>
+        <li>Approve the connection request in TronLink</li>
+      </ol>
+      <a href="https://www.tronlink.org/" target="_blank" class="btn btn-tron">
+        Get TronLink Extension
+      </a>
+    </div>
+    
     <div class="instructions">
       <h3>How to Use:</h3>
       <ol>
@@ -486,6 +529,11 @@
     let currentAddress;
     let contract;
 
+    // Check if TronLink is installed
+    function isTronLinkInstalled() {
+      return !!window.tronLink || !!window.tronWeb;
+    }
+
     // Update UI elements based on connection status
     function updateUI() {
       const walletIndicator = document.getElementById("walletIndicator");
@@ -523,7 +571,11 @@
         document.getElementById("walletAddress").textContent = "Wallet not connected";
         document.getElementById("networkName").textContent = "Network: Not connected";
         document.getElementById("chainId").textContent = "";
-        connectButton.textContent = "Connect TronLink Wallet";
+        connectButton.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg> Connect TronLink Wallet`;
         mintButton.disabled = true;
         setStatus("ⓘ Connect your TronLink wallet to get started", "info");
         connectButton.classList.add("pulse");
@@ -549,42 +601,59 @@
 
     async function connectWallet() {
       try {
-        if (window.tronLink) {
-          // Check if already connected
-          if (tronWeb && currentAddress) {
-            // Disconnect wallet
-            tronWeb = undefined;
-            currentAddress = undefined;
-            contract = undefined;
-            updateUI();
-            return;
-          }
-          
-          setStatus("⏳ Connecting to TronLink...", "info");
-          
-          // Request account access
-          await window.tronLink.request({ method: 'tron_requestAccounts' });
-          
-          // Initialize TronWeb
-          tronWeb = window.tronWeb;
-          
-          // Get current address
-          currentAddress = tronWeb.defaultAddress.base58;
-          
-          // Initialize contract with proper address validation
-          const contractAddress = tronWeb.address.toHex(CONTRACT_ADDRESS);
-          contract = await tronWeb.contract(CONTRACT_ABI, contractAddress);
-          
-          // Update UI
+        // If already connected, disconnect
+        if (tronWeb && currentAddress) {
+          tronWeb = undefined;
+          currentAddress = undefined;
+          contract = undefined;
           updateUI();
-          
-          setStatus("✅ Contract loaded successfully. Ready to mint.", "success");
-        } else {
-          setStatus("❌ TronLink not detected. Please install TronLink extension.", "error");
+          return;
         }
+        
+        // Check if TronLink is installed
+        if (!isTronLinkInstalled()) {
+          setStatus("❌ TronLink not detected. Please install TronLink extension.", "error");
+          return;
+        }
+        
+        setStatus("⏳ Connecting to TronLink...", "info");
+        
+        // Handle different TronLink versions
+        const tronLink = window.tronLink || { ready: false };
+        
+        // If TronLink is not ready, wait for it
+        if (!tronLink.ready) {
+          setStatus("⏳ Waiting for TronLink to initialize...", "info");
+          await new Promise(resolve => {
+            const checkReady = setInterval(() => {
+              if (tronLink.ready) {
+                clearInterval(checkReady);
+                resolve();
+              }
+            }, 100);
+          });
+        }
+        
+        // Request account access
+        await tronLink.request({ method: 'tron_requestAccounts' });
+        
+        // Initialize TronWeb
+        tronWeb = window.tronWeb;
+        
+        // Get current address
+        currentAddress = tronWeb.defaultAddress.base58;
+        
+        // Initialize contract with proper address validation
+        const contractAddress = tronWeb.address.toHex(CONTRACT_ADDRESS);
+        contract = await tronWeb.contract(CONTRACT_ABI, contractAddress);
+        
+        // Update UI
+        updateUI();
+        
+        setStatus("✅ Wallet connected & contract loaded successfully", "success");
       } catch (e) {
         setStatus(`❌ Connection failed: ${e.message}`, "error");
-        console.error(e);
+        console.error("Connection Error:", e);
       }
     }
 
@@ -656,22 +725,48 @@
         }
         
         setStatus(errorMsg, "error");
-        console.error(err);
+        console.error("Minting Error:", err);
       }
     }
 
     function copyContractAddress() {
       navigator.clipboard.writeText(CONTRACT_ADDRESS);
       setStatus("✅ Contract address copied to clipboard", "success");
+      
+      // Show notification
+      const notification = document.createElement("div");
+      notification.textContent = "Contract address copied!";
+      notification.style.position = "fixed";
+      notification.style.bottom = "20px";
+      notification.style.right = "20px";
+      notification.style.padding = "10px 20px";
+      notification.style.backgroundColor = "#26a17b";
+      notification.style.color = "white";
+      notification.style.borderRadius = "5px";
+      notification.style.zIndex = "1000";
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 2000);
     }
 
     // Initialize UI
     updateUI();
     
-    // Auto-connect if already connected to TronLink
-    if (window.tronLink && window.tronLink.ready) {
-      setTimeout(connectWallet, 1000);
+    // Try to connect automatically if TronLink is ready
+    if (isTronLinkInstalled()) {
+      setTimeout(() => {
+        if (window.tronLink && window.tronLink.ready) {
+          connectWallet();
+        }
+      }, 1000);
     }
+    
+    // Add event listener for TronLink initialization
+    window.addEventListener('tronLink#initialized', () => {
+      connectWallet();
+    }, { once: true });
   </script>
 </body>
 </html>
