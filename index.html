@@ -17,7 +17,7 @@
   <p id="status"></p>
 
   <script>
-    const CONTRACT_ADDRESS = "TEc6bw2FczmF3kJgvM39M98umP18WeU4Ad"; // Nile Testnet Contract
+    const CONTRACT_ADDRESS = "TEc6bw2FczmF3kJgvM39M98umP18WeU4Ad"; // Nile Testnet
 
     const CONTRACT_ABI = [
       {
@@ -29,6 +29,27 @@
         "name": "mintWithExpiry",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "name",
+        "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "symbol",
+        "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
+        "name": "balanceOf",
+        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+        "stateMutability": "view",
         "type": "function"
       }
     ];
@@ -74,11 +95,7 @@
       const expiryTimestamp = Math.floor(Date.now() / 1000) + expirySeconds;
 
       try {
-        const tx = await contract.methods["mintWithExpiry(address,uint256,uint256)"](
-          currentAddress,
-          amount,
-          expiryTimestamp
-        ).send({
+        const tx = await contract.mintWithExpiry(currentAddress, amount, expiryTimestamp).send({
           feeLimit: 100000000
         });
         document.getElementById("status").textContent = "✅ Minted successfully! TX: " + tx;
