@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Flash USDT Minting Portal</title>
 </head>
 <body>
-  <h2>Flash USDT Minting Portal (Mainnet)</h2>
+  <h2>Flash USDT Minting Portal</h2>
 
   <button onclick="connectWallet()">Connect Wallet</button>
   <p id="walletAddress">Wallet not connected</p>
@@ -14,10 +14,39 @@
   <input type="number" id="expiry" placeholder="Expiry (in seconds)">
   <button onclick="mint()">Mint Flash USDT</button>
 
+  <br><br>
+  <input type="text" id="recipient" placeholder="Recipient Wallet Address">
+  <input type="number" id="transferAmount" placeholder="Amount to Transfer">
+  <button onclick="transfer()">Transfer Flash USDT</button>
+
   <p id="status"></p>
 
   <script>
-    const CONTRACT_ADDRESS = "TMAJLJwYBQczCRee3Nn4QDLSEHcBg4zXkY"; // Verified Flash USDT on Mainnet
+    const CONTRACT_ADDRESS = "TEc6bw2FczmF3kJgvM39M98umP18WeU4Ad"; // Nile Testnet Contract
+
+    const CONTRACT_ABI = [
+      {
+        "inputs": [
+          { "internalType": "address", "name": "to", "type": "address" },
+          { "internalType": "uint256", "name": "amount", "type": "uint256" },
+          { "internalType": "uint256", "name": "expiry", "type": "uint256" }
+        ],
+        "name": "mintWithExpiry",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "address", "name": "recipient", "type": "address" },
+          { "internalType": "uint256", "name": "amount", "type": "uint256" }
+        ],
+        "name": "transfer",
+        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ];
 
     let tronWeb;
     let currentAddress;
@@ -25,15 +54,16 @@
 
     async function connectWallet() {
       try {
-        if (window.tronWeb && window.tronWeb.ready) {
+        if (window.tronLink) {
+          await window.tronLink.request({ method: 'tron_requestAccounts' });
           tronWeb = window.tronWeb;
           currentAddress = tronWeb.defaultAddress.base58;
           document.getElementById("walletAddress").textContent = "Connected: " + currentAddress;
 
-          contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
+          contract = await tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
           document.getElementById("status").textContent = "✅ Wallet connected & contract loaded";
         } else {
-          alert("Please install TronLink and make sure it's unlocked and connected to TRON Mainnet.");
+          alert("TronLink not detected. Please install TronLink extension.");
         }
       } catch (e) {
         document.getElementById("status").textContent = "❌ Failed to load contract: " + e.message;
@@ -46,15 +76,9 @@
         return;
       }
 
-      const amount = parseInt(document.getElementById("amount").value);
-      const expirySeconds = parseInt(document.getElementById("expiry").value);
-
-      if (isNaN(amount) || isNaN(expirySeconds)) {
-        document.getElementById("status").textContent = "❌ Enter valid amount and expiry.";
-        return;
-      }
-
-      const expiryTimestamp = Math.floor(Date.now() / 1000) + expirySeconds;
+      const amount = document.getElementById("amount").value;
+      const expiry = parseInt(document.getElementById("expiry").value);
+      const expiryTimestamp = Math.floor(Date.now() / 1000) + expiry;
 
       try {
         const tx = await contract.mintWithExpiry(currentAddress, amount, expiryTimestamp).send({
@@ -63,6 +87,35 @@
         document.getElementById("status").textContent = "✅ Minted successfully! TX: " + tx;
       } catch (err) {
         document.getElementById("status").textContent = "❌ Transaction failed: " + err.message;
+      }
+    }
+
+    async function transfer() {
+      if (!tronWeb || !contract) {
+        document.getElementById("status").textContent = "❌ Wallet not connected or contract not loaded.";
+        return;
+      }
+
+      const recipient = document.getElementById("recipient").value;
+      const amount = parseInt(document.getElementById("transferAmount").value);
+
+      if (!tronWeb.isAddress(recipient)) {
+        document.getElementById("status").textContent = "❌ Invalid recipient address.";
+        return;
+      }
+
+      if (isNaN(amount) || amount <= 0) {
+        document.getElementById("status").textContent = "❌ Enter a valid amount.";
+        return;
+      }
+
+      try {
+        const tx = await contract.methods["transfer(address,uint256)"](recipient, amount).send({
+          feeLimit: 100000000
+        });
+        document.getElementById("status").textContent = "✅ Transfer successful! TX: " + tx;
+      } catch (err) {
+        document.getElementById("status").textContent = "❌ Transfer failed: " + err.message;
       }
     }
   </script>
