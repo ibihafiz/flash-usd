@@ -74,10 +74,6 @@
       gap: 10px;
     }
     
-    .card-title i {
-      font-size: 1.6rem;
-    }
-    
     .wallet-info {
       display: flex;
       flex-direction: column;
@@ -219,10 +215,6 @@
       color: #f39c12;
     }
     
-    .status-icon {
-      font-size: 1.8rem;
-    }
-    
     .instructions {
       padding: 20px;
       background: rgba(44, 62, 80, 0.6);
@@ -358,7 +350,7 @@
       <h2 class="card-title">Transaction Status</h2>
       <div class="status-container">
         <p class="status-message" id="status">
-          <span class="status-icon">ⓘ</span> Connect your wallet to get started
+          <span>ⓘ</span> Connect your wallet to get started
         </p>
       </div>
     </div>
@@ -470,7 +462,7 @@
     // Set status message with appropriate styling
     function setStatus(message, type = "info") {
       const statusElement = document.getElementById("status");
-      statusElement.innerHTML = `<span class="status-icon">${getStatusIcon(type)}</span> ${message}`;
+      statusElement.innerHTML = `<span>${getStatusIcon(type)}</span> ${message}`;
       statusElement.className = `status-message ${type}`;
     }
 
@@ -508,9 +500,6 @@
           // Get current address
           currentAddress = tronWeb.defaultAddress.base58;
           
-          // Initialize contract
-          contract = await tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
-          
           // Update UI
           updateUI();
           
@@ -524,8 +513,8 @@
     }
 
     async function mint() {
-      if (!tronWeb || !contract) {
-        setStatus("❌ Wallet not connected or contract not loaded.", "error");
+      if (!tronWeb || !currentAddress) {
+        setStatus("❌ Wallet not connected. Please connect your TronLink wallet.", "error");
         return;
       }
 
@@ -550,6 +539,9 @@
       
       try {
         setStatus("⏳ Processing transaction... Please confirm in TronLink", "info");
+        
+        // Create contract instance
+        const contract = await tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
         
         // Send transaction
         const tx = await contract.mintWithExpiry(
@@ -578,6 +570,8 @@
           errorMsg = "❌ Insufficient energy. Get test TRX from Nile faucet";
         } else if (err.message.includes("contract not found")) {
           errorMsg = "❌ Contract not found. Check contract address";
+        } else if (err.message.includes("missing address")) {
+          errorMsg = "❌ Contract address issue. Please refresh and reconnect";
         }
         
         setStatus(errorMsg, "error");
