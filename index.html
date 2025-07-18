@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Flash USDT Minting Portal</title>
 </head>
 <body>
@@ -17,7 +17,7 @@
   <p id="status"></p>
 
   <script>
-    const CONTRACT_ADDRESS = "TMAJLJwYBQczCRee3Nn4QDLSEHcBg4zXkY"; // Mainnet verified contract
+    const CONTRACT_ADDRESS = "TMAJLJwYBQczCRee3Nn4QDLSEHcBg4zXkY"; // Verified Flash USDT on Mainnet
 
     let tronWeb;
     let currentAddress;
@@ -25,8 +25,7 @@
 
     async function connectWallet() {
       try {
-        if (window.tronLink) {
-          await window.tronLink.request({ method: 'tron_requestAccounts' });
+        if (window.tronWeb && window.tronWeb.ready) {
           tronWeb = window.tronWeb;
           currentAddress = tronWeb.defaultAddress.base58;
           document.getElementById("walletAddress").textContent = "Connected: " + currentAddress;
@@ -34,7 +33,7 @@
           contract = await tronWeb.contract().at(CONTRACT_ADDRESS);
           document.getElementById("status").textContent = "✅ Wallet connected & contract loaded";
         } else {
-          alert("TronLink not detected. Please install TronLink extension.");
+          alert("Please install TronLink and make sure it's unlocked and connected to TRON Mainnet.");
         }
       } catch (e) {
         document.getElementById("status").textContent = "❌ Failed to load contract: " + e.message;
