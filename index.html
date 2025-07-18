@@ -1,87 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Flash USDT Minting Portal</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- =========  STYLES  ========= -->
   <style>
-    /* ----------  GLOBAL STYLES  ---------- */
     :root{
       --primary:#2c3e50;--secondary:#3498db;--success:#2ecc71;
       --danger:#e74c3c;--dark:#1a2530;--light:#f8f9fa;
     }
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    body{
-      background:linear-gradient(135deg,#1a2a3a,#0d1b2a);
-      color:var(--light);min-height:100vh;padding:20px;line-height:1.6;
-      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
-    }
+    body{min-height:100vh;padding:20px;line-height:1.6;
+      background:linear-gradient(135deg,#1a2a3a,#0d1b2a);color:var(--light);
+      font-family:'Segoe UI',Tahoma,Verdana,sans-serif}
     .container{max-width:800px;margin:0 auto;padding:20px}
-    header{padding:20px;text-align:center;margin-bottom:30px;
-      background:rgba(0,0,0,.3);border-radius:15px;
+
+    header{margin-bottom:30px;padding:20px;text-align:center;
+      border-radius:15px;background:rgba(0,0,0,.3);
       border:1px solid rgba(255,255,255,.1)}
     h1{font-size:2.5rem;margin-bottom:10px;color:#3498db;
       text-shadow:0 0 10px rgba(52,152,219,.5)}
-    .subtitle{color:#95a5a6;font-size:1.1rem}
+    .subtitle{font-size:1.1rem;color:#95a5a6}
 
-    /* ----------  CARDS & BASIC UI  ---------- */
-    .card{background:rgba(26,37,48,.8);border-radius:15px;
-      padding:25px;margin-bottom:25px;border:1px solid rgba(255,255,255,.1);
+    .card{background:rgba(26,37,48,.8);border-radius:15px;padding:25px;
+      margin-bottom:25px;border:1px solid rgba(255,255,255,.1);
       box-shadow:0 10px 20px rgba(0,0,0,.3)}
     .card-title{font-size:1.4rem;margin-bottom:20px;color:#3498db;
       display:flex;align-items:center;gap:10px}
+
     .wallet-info,.form-group{display:flex;flex-direction:column;gap:15px}
-    .wallet-status,.network-info{
-      display:flex;align-items:center;gap:10px;padding:15px;border-radius:10px;
-      background:rgba(0,0,0,.2)}
+    .wallet-status,.network-info{display:flex;align-items:center;gap:10px;
+      padding:15px;border-radius:10px;background:rgba(0,0,0,.2)}
     .network-info{justify-content:space-between}
-    .status-indicator{width:15px;height:15px;border-radius:50%;background:var(--danger)}
+
+    .status-indicator{width:15px;height:15px;border-radius:50%;
+      background:var(--danger)}
     .status-indicator.connected{background:var(--success)}
-    label{font-weight:500;color:#bdc3c7;margin-bottom:5px}
+
+    label{color:#bdc3c7;font-weight:500;margin-bottom:5px}
     input{width:100%;padding:14px;border-radius:10px;font-size:1.1rem;
-      background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);color:#fff}
+      background:rgba(0,0,0,.3);color:#fff;
+      border:1px solid rgba(255,255,255,.1)}
     input:focus{outline:none;border-color:var(--secondary);
       box-shadow:0 0 0 3px rgba(52,152,219,.3)}
+
     .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;
       padding:14px 25px;font-size:1.1rem;font-weight:600;border:none;cursor:pointer;
-      border-radius:10px;background:var(--secondary);color:#fff;
-      transition:.3s}
+      border-radius:10px;background:var(--secondary);color:#fff;transition:.3s}
     .btn:hover{background:#2980b9;transform:translateY(-2px);
       box-shadow:0 5px 15px rgba(0,0,0,.3)}
     .btn-success{background:var(--success)}.btn-success:hover{background:#27ae60}
     .btn-block{width:100%}.pulse{animation:pulse 2s infinite}
     @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
-    .status-container{padding:20px;border-radius:10px;min-height:80px;
-      display:flex;align-items:center;background:rgba(0,0,0,.2)}
-    .status-message{font-size:1.1rem;display:flex;align-items:center;gap:12px}
+
+    .status-container{display:flex;align-items:center;min-height:80px;
+      padding:20px;border-radius:10px;background:rgba(0,0,0,.2)}
+    .status-message{display:flex;align-items:center;gap:12px;font-size:1.1rem}
     .status-message.success{color:var(--success)}
     .status-message.error{color:var(--danger)}
     .status-message.warning{color:#f39c12}
+
     .info-text{color:#95a5a6;font-size:.9rem}
     .token-info{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-around;margin-top:20px}
     .token-card{flex:1;min-width:200px;text-align:center;padding:15px;
       border-radius:10px;background:rgba(0,0,0,.2)}
     .token-value{font-size:1.3rem;font-weight:bold;color:#3498db;margin-top:8px}
-    .instructions{margin-top:30px;padding:20px;border-radius:15px;
-      background:rgba(44,62,80,.6)}
+
+    .instructions{margin-top:30px;padding:20px;border-radius:15px;background:rgba(44,62,80,.6)}
     .instructions h3{color:#3498db;margin-bottom:15px}
     .instructions ol{padding-left:20px;margin-bottom:15px}
     .instructions li{margin-bottom:10px}
+
     @media(max-width:600px){
       .container{padding:10px}h1{font-size:2rem}.card{padding:20px}
       .token-card{min-width:100%}
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <!-- ===== HEADER ===== -->
     <header>
       <h1>Flash USDT Minting Portal</h1>
-      <p class="subtitle">Mint USDT tokens with expiration on Tron Nile Testnet</p>
+      <p class="subtitle">Mint USDT tokens with expiration on Tron Nile Testnet</p>
     </header>
 
-    <!-- ===== WALLET CONNECTION ===== -->
+    <!-- ===== WALLET ===== -->
     <div class="card">
       <h2 class="card-title">Wallet Connection</h2>
       <div class="wallet-info">
@@ -98,33 +105,33 @@
           <span id="chainId"></span>
         </div>
 
-        <button class="btn btn-block pulse" id="connectButton" onclick="connectWallet()">Connect TronLink Wallet</button>
+        <button class="btn btn-block pulse" id="connectButton" onclick="connectWallet()">
+          Connect TronLink Wallet
+        </button>
       </div>
     </div>
 
     <!-- ===== MINT FORM ===== -->
     <div class="card">
-      <h2 class="card-title">Mint USDT</h2>
+      <h2 class="card-title">Mint USDT</h2>
       <div class="form-group">
         <label for="amount">Amount to mint</label>
-        <input type="number" id="amount" min="1" placeholder="Enter amount (e.g., 100)">
-        <p class="info-text">1 USDT = 1 USDT equivalent</p>
+        <input type="number" id="amount" min="1" placeholder="e.g. 100" />
       </div>
-
       <div class="form-group">
-        <label for="expiry">Expiry duration (in seconds)</label>
-        <input type="number" id="expiry" min="1" placeholder="Enter expiry (e.g., 3600)">
-        <p class="info-text">Example 3600 sec = 1 hour</p>
+        <label for="expiry">Expiry duration (seconds)</label>
+        <input type="number" id="expiry" min="1" placeholder="e.g. 3600" />
       </div>
-
       <button class="btn btn-success btn-block" id="mintButton" onclick="mint()">Mint USDT</button>
     </div>
 
-    <!-- ===== STATUS BOX ===== -->
+    <!-- ===== STATUS ===== -->
     <div class="card">
       <h2 class="card-title">Transaction Status</h2>
       <div class="status-container">
-        <p class="status-message" id="status"><span>ⓘ</span> Connect your wallet to get started</p>
+        <p class="status-message" id="status">
+          <span>ⓘ</span> Connect your wallet to get started
+        </p>
       </div>
     </div>
 
@@ -150,140 +157,131 @@
 
     <!-- ===== HOW‑TO ===== -->
     <div class="instructions">
-      <h3>How to Use:</h3>
+      <h3>How to use:</h3>
       <ol>
-        <li>Install TronLink extension</li>
-        <li>Switch network to <strong>Nile Testnet</strong></li>
-        <li>Get test TRX from Nile faucet for fees</li>
-        <li>Connect wallet above</li>
+        <li>Install TronLink extension</li>
+        <li>Switch network to <strong>Nile Testnet</strong></li>
+        <li>Connect wallet (button above)</li>
         <li>Enter amount &amp; expiry</li>
-        <li>Hit <em>Mint USDT</em> and confirm in TronLink</li>
+        <li>Click <em>Mint USDT</em> and confirm</li>
       </ol>
-      <p><strong>Note:</strong> Minted tokens appear in your wallet immediately after confirmation.</p>
     </div>
-  </div><!-- /.container -->
+  </div>
 
-  <!-- ========== SCRIPT ========= -->
+  <!-- ==========  SCRIPT  ========== -->
   <script>
     const CONTRACT_ADDRESS = "TEc6bw2FczmF3kJgvM39M98umP18WeU4Ad";
     const TOKEN_DECIMALS   = 6;
     const NILE_CHAIN_ID    = "0xcd8690dc";
-    const CONTRACT_ABI = [
-      {
-        "inputs":[
-          {"internalType":"address","name":"to","type":"address"},
-          {"internalType":"uint256","name":"amount","type":"uint256"},
-          {"internalType":"uint256","name":"expiry","type":"uint256"}
-        ],
-        "name":"mintWithExpiry",
-        "outputs":[],
-        "stateMutability":"nonpayable",
-        "type":"function"
-      }
-    ];
+    const CONTRACT_ABI=[{inputs:[{internalType:"address",name:"to",type:"address"},{internalType:"uint256",name:"amount",type:"uint256"},{internalType:"uint256",name:"expiry",type:"uint256"}],name:"mintWithExpiry",outputs:[],stateMutability:"nonpayable",type:"function"}];
 
-    /* ----------  UI HELPERS  ---------- */
+    /* ----------  STATUS HELPER ---------- */
     function setStatus(msg,type="info"){
-      const el=document.getElementById("status");
       const icon={success:"✅",error:"❌",warning:"⚠️",info:"ⓘ"}[type]||"ⓘ";
+      const el=document.getElementById("status");
       el.innerHTML=`<span>${icon}</span> ${msg}`;
       el.className=`status-message ${type}`;
     }
+
+    /* ----------  UI UPDATE ---------- */
     function updateUI(){
-      const wInd=document.getElementById("walletIndicator");
-      const nInd=document.getElementById("networkIndicator");
-      const wAddr=document.getElementById("walletAddress");
-      const nName=document.getElementById("networkName");
-      const cId  =document.getElementById("chainId");
-      const connectBtn=document.getElementById("connectButton");
+      const wI=document.getElementById("walletIndicator");
+      const wA=document.getElementById("walletAddress");
+      const nI=document.getElementById("networkIndicator");
+      const nN=document.getElementById("networkName");
+      const cI=document.getElementById("chainId");
       const mintBtn=document.getElementById("mintButton");
+      const connectBtn=document.getElementById("connectButton");
 
       if(window.tronWeb && tronWeb.defaultAddress.base58){
         const addr=tronWeb.defaultAddress.base58;
-        wInd.classList.add("connected");
-        wAddr.textContent=`Connected: ${addr.slice(0,6)}…${addr.slice(-4)}`;
+        wI.classList.add("connected");
+        wA.textContent=`Connected: ${addr.slice(0,6)}…${addr.slice(-4)}`;
         connectBtn.textContent="Disconnect Wallet";
         connectBtn.classList.remove("pulse");
 
         if(tronWeb.fullNode.host.includes("nile")){
-          nInd.classList.add("connected");
-          nName.textContent="Network: Nile Testnet";
-          cId.textContent=`Chain ID: ${NILE_CHAIN_ID}`;
+          nI.classList.add("connected");
+          nN.textContent="Network: Nile Testnet";
+          cI.textContent=`Chain ID: ${NILE_CHAIN_ID}`;
           mintBtn.disabled=false;
           setStatus("✅ Wallet connected, ready to mint.","success");
         }else{
-          nInd.classList.remove("connected");
-          nName.textContent="Network: Wrong network";
-          cId.textContent="Switch to Nile Testnet";
+          nI.classList.remove("connected");
+          nN.textContent="Network: Wrong network";
+          cI.textContent="Switch to Nile Testnet";
           mintBtn.disabled=true;
           setStatus("⚠️ Please switch to Nile Testnet.","warning");
         }
       }else{
-        wInd.classList.remove("connected");
-        nInd.classList.remove("connected");
-        wAddr.textContent="Wallet not connected";
-        nName.textContent="Network: Not connected";
-        cId.textContent="";
-        connectBtn.textContent="Connect TronLink Wallet";
+        wI.classList.remove("connected");nI.classList.remove("connected");
+        wA.textContent="Wallet not connected";
+        nN.textContent="Network: Not connected";cI.textContent="";
+        mintBtn.disabled=true;setStatus("ⓘ Connect your wallet to start.","info");
+        connectBtn.textContent="Connect TronLink Wallet";
         connectBtn.classList.add("pulse");
-        mintBtn.disabled=true;
-        setStatus("ⓘ Connect your wallet to get started","info");
       }
     }
 
-    /* ----------  WALLET CONNECT / DISCONNECT  ---------- */
+    /* ----------  CONNECT WALLET (robust) ---------- */
     async function connectWallet(){
-      if(!window.tronLink){setStatus("❌ TronLink extension not detected.","error");return;}
+      if(!window.tronLink){setStatus("❌ TronLink not detected.","error");return;}
+
+      // If already connected & user clicks again, treat as local disconnect toggle
       if(window.tronWeb && tronWeb.defaultAddress.base58){
-        // "disconnect" locally
         window.tronWeb=undefined;
-        updateUI();
-        return;
+        updateUI();return;
       }
       try{
         setStatus("⏳ Requesting wallet access…","info");
         await tronLink.request({method:"tron_requestAccounts"});
+
+        // wait for tronWeb injection (up to ~2s)
+        for(let i=0;i<10;i++){
+          if(window.tronWeb && tronWeb.defaultAddress.base58) break;
+          await new Promise(r=>setTimeout(r,200));
+        }
+        if(!window.tronWeb || !tronWeb.defaultAddress.base58){
+          throw new Error("TronWeb injection timeout");
+        }
         updateUI();
       }catch(e){
-        setStatus("❌ Connection cancelled.","error");
+        console.error(e);
+        setStatus("❌ Wallet connection failed or denied.","error");
       }
     }
 
-    /* ----------  MINT FUNCTION  ---------- */
+    /* ----------  MINT ---------- */
     async function mint(){
       if(!window.tronWeb || !tronWeb.defaultAddress.base58){
         setStatus("❌ Wallet not connected.","error");return;
       }
       const amount=document.getElementById("amount").value;
       const expiry=document.getElementById("expiry").value;
-      if(!amount || amount<=0){setStatus("❌ Enter a valid amount","error");return;}
-      if(!expiry || expiry<=0){setStatus("❌ Enter a valid expiry time","error");return;}
+      if(!amount||amount<=0){setStatus("❌ Enter valid amount.","error");return;}
+      if(!expiry||expiry<=0){setStatus("❌ Enter valid expiry.","error");return;}
 
       const amountSun=tronWeb.toBigNumber(amount).times(10**TOKEN_DECIMALS).toString();
       const expiryTs=Math.floor(Date.now()/1000)+parseInt(expiry);
 
       try{
-        setStatus("⏳ Please confirm transaction in TronLink…","info");
-        const contract=await tronWeb.contract(CONTRACT_ABI,CONTRACT_ADDRESS);
-        const tx=await contract.mintWithExpiry(
-          tronWeb.defaultAddress.base58,
-          amountSun,
-          expiryTs
-        ).send({feeLimit:100_000_000});
-        const link=`https://nile.tronscan.org/#/transaction/${tx}`;
-        setStatus(`✅ Mint successful! <a href=\"${link}\" target=\"_blank\">View on Tronscan</a>`,"success");
+        setStatus("⏳ Confirm transaction in TronLink…","info");
+        const c=await tronWeb.contract(CONTRACT_ABI,CONTRACT_ADDRESS);
+        const tx=await c.mintWithExpiry(tronWeb.defaultAddress.base58,amountSun,expiryTs)
+                       .send({feeLimit:100000000});
+        setStatus(`✅ Minted! <a href="https://nile.tronscan.org/#/transaction/${tx}" target="_blank">view</a>`,"success");
         document.getElementById("amount").value="";
         document.getElementById("expiry").value="";
       }catch(e){
         console.error(e);
         let msg="❌ Transaction failed.";
-        if(e.message.includes("denied transaction"))msg="❌ Transaction cancelled.";
-        else if(e.message.includes("insufficient energy"))msg="❌ Insufficient energy / TRX.";
+        if(e.message.includes("denied transaction"))msg="❌ User cancelled.";
+        else if(e.message.includes("insufficient energy"))msg="❌ Insufficient TRX/Energy.";
         setStatus(msg,"error");
       }
     }
 
-    /* ----------  INITIALIZE  ---------- */
+    /* ----------  INIT ---------- */
     document.addEventListener("DOMContentLoaded",()=>{
       updateUI();
       if(window.tronLink && window.tronLink.ready){connectWallet();}
