@@ -1,6 +1,6 @@
 // Final working version of app.js with all settings correct
 
-const contractAddress = "TLL3Ez552j5WqQx3LDBdr55W2C4MWH3Lcv"; // ✅ your deployed contract address
+const contractAddress = "TJwtqS5CCZgqWP6Yi4wmzDKaZp1j3Bq3kP"; // ✅ your deployed contract address
 
 const CONTRACT_ABI = [
   // ✅ Paste full verified ABI here, shortened for display
