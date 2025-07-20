@@ -1,239 +1,70 @@
-const CONTRACT_ADDRESS = "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB";
+// ✅ Flash USDT App.js with DOMContentLoaded fix
 
+const CONTRACT_ADDRESS = "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB";
 const CONTRACT_ABI = [
-	{
-		"inputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{ "indexed": true, "internalType": "address", "name": "owner", "type": "address" },
-			{ "indexed": true, "internalType": "address", "name": "spender", "type": "address" },
-			{ "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" }
-		],
-		"name": "Approval",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{ "indexed": true, "internalType": "address", "name": "to", "type": "address" },
-			{ "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" },
-			{ "indexed": false, "internalType": "uint256", "name": "expiry", "type": "uint256" }
-		],
-		"name": "Mint",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{ "indexed": true, "internalType": "address", "name": "from", "type": "address" },
-			{ "indexed": true, "internalType": "address", "name": "to", "type": "address" },
-			{ "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" }
-		],
-		"name": "Transfer",
-		"type": "event"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{ "internalType": "address", "name": "", "type": "address" },
-			{ "internalType": "address", "name": "", "type": "address" }
-		],
-		"name": "allowance",
-		"outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{ "internalType": "address", "name": "_spender", "type": "address" },
-			{ "internalType": "uint256", "name": "_value", "type": "uint256" }
-		],
-		"name": "approve",
-		"outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [{ "internalType": "address", "name": "_owner", "type": "address" }],
-		"name": "balanceOf",
-		"outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [{ "internalType": "address", "name": "", "type": "address" }],
-		"name": "balances",
-		"outputs": [
-			{ "internalType": "uint256", "name": "amount", "type": "uint256" },
-			{ "internalType": "uint256", "name": "expiry", "type": "uint256" }
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "decimals",
-		"outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{ "internalType": "address", "name": "_to", "type": "address" },
-			{ "internalType": "uint256", "name": "_amount", "type": "uint256" },
-			{ "internalType": "uint256", "name": "_durationInSeconds", "type": "uint256" }
-		],
-		"name": "mint",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "name",
-		"outputs": [{ "internalType": "string", "name": "", "type": "string" }],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "owner",
-		"outputs": [{ "internalType": "address", "name": "", "type": "address" }],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "symbol",
-		"outputs": [{ "internalType": "string", "name": "", "type": "string" }],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "totalSupply",
-		"outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{ "internalType": "address", "name": "_to", "type": "address" },
-			{ "internalType": "uint256", "name": "_value", "type": "uint256" }
-		],
-		"name": "transfer",
-		"outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{ "internalType": "address", "name": "_from", "type": "address" },
-			{ "internalType": "address", "name": "_to", "type": "address" },
-			{ "internalType": "uint256", "name": "_value", "type": "uint256" }
-		],
-		"name": "transferFrom",
-		"outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [{ "internalType": "address", "name": "newOwner", "type": "address" }],
-		"name": "transferOwnership",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	}
+  // 🔽 Your ABI pasted here (shortened for brevity in this snippet)
+  {"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},
+  {"constant":false,"inputs":[{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_amount","type":"uint256"},{"internalType":"uint256","name":"_durationInSeconds","type":"uint256"}],"name":"mint","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},
+  {"constant":true,"inputs":[{"internalType":"address","name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+  {"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},
+  {"constant":true,"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+  {"constant":true,"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+  {"constant":false,"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
+  // Add remaining ABI parts here if needed
 ];
 
-let contract;
-let userAddress;
+let contractInstance;
 
-window.addEventListener("load", async () => {
-  if (window.tronWeb && window.tronWeb.ready) {
-    userAddress = window.tronWeb.defaultAddress.base58;
-    document.getElementById("wallet").innerText = `Wallet: ${userAddress}`;
-    contract = await window.tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
-  } else {
-    document.getElementById("wallet").innerText = "Wallet: Not Connected";
-  }
-});
-
-// Connect Button
-document.getElementById("connect").addEventListener("click", async () => {
-  if (window.tronLink) {
-    await window.tronLink.request({ method: "tron_requestAccounts" });
-    userAddress = window.tronWeb.defaultAddress.base58;
-    document.getElementById("wallet").innerText = `Wallet: ${userAddress}`;
-    contract = await window.tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
-  } else {
-    alert("TronLink is not installed.");
-  }
-});
-
-// Mint Button
-document.getElementById("mint").addEventListener("click", async () => {
-  const amountInput = document.getElementById("mint-amount");
+// 🚀 Wait for page to load first
+document.addEventListener("DOMContentLoaded", async function () {
+  const mintButton = document.getElementById("mint");
+  const connectButton = document.getElementById("connect");
   const statusDiv = document.getElementById("mint-status");
-  const rawAmount = amountInput.value;
+  const balanceDiv = document.getElementById("balance");
 
-  if (!rawAmount || isNaN(rawAmount) || parseFloat(rawAmount) <= 0) {
-    statusDiv.innerText = "❌ Invalid amount!";
-    return;
-  }
+  connectButton.addEventListener("click", async () => {
+    if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+      document.getElementById("wallet").innerText =
+        "Wallet: " + window.tronWeb.defaultAddress.base58;
 
-  const amount = window.tronWeb.toSun(rawAmount); // 6 decimals
-  const duration = 3600; // 1 hour expiry
+      contractInstance = await window.tronWeb.contract(
+        CONTRACT_ABI,
+        CONTRACT_ADDRESS
+      );
+    } else {
+      alert("Please connect TronLink Wallet");
+    }
+  });
 
-  try {
-    statusDiv.innerText = "⏳ Minting...";
-    await contract.mint(userAddress, amount, duration).send();
-    statusDiv.innerText = `✅ Successfully minted ${rawAmount} FUSDT!`;
-  } catch (err) {
-    console.error(err);
-    statusDiv.innerText = "❌ Mint failed.";
-  }
-});
+  mintButton.addEventListener("click", async () => {
+    try {
+      const amountInput = document.getElementById("mint-amount").value;
+      const amount = parseFloat(amountInput);
+      if (!amount || amount <= 0) {
+        statusDiv.innerText = "Invalid amount";
+        return;
+      }
+      const duration = 3600; // 1 hour expiry (you can customize)
+      const from = window.tronWeb.defaultAddress.base58;
 
-// Balance Button
-document.getElementById("check-balance").addEventListener("click", async () => {
-  if (!contract || !userAddress) return;
+      await contractInstance
+        .mint(from, window.tronWeb.toSun(amount), duration)
+        .send();
 
-  try {
-    const balance = await contract.methods.balanceOf(userAddress).call();
-    document.getElementById("balance").innerText = `Balance: ${window.tronWeb.fromSun(balance)} FUSDT`;
-  } catch (err) {
-    console.error(err);
-    document.getElementById("balance").innerText = "Balance: Error";
-  }
+      statusDiv.innerText = `✅ Minted ${amount} FUSDT to ${from}`;
+    } catch (err) {
+      console.error(err);
+      statusDiv.innerText = "❌ Mint failed: " + err.message;
+    }
+  });
+
+  document.getElementById("check-balance").addEventListener("click", async () => {
+    try {
+      const address = window.tronWeb.defaultAddress.base58;
+      const balance = await contractInstance.balanceOf(address).call();
+      balanceDiv.innerText = `Balance: ${window.tronWeb.fromSun(balance)} FUSDT`;
+    } catch (err) {
+      balanceDiv.innerText = "Failed to fetch balance";
+    }
+  });
 });
