@@ -1,27 +1,9 @@
-const contractAddress = "TLL3Ez552j5WqQx3LDBdr55W2C4MWH3Lcv"; // ✅ Updated contract address
+// Final working version of app.js with all settings correct
 
-let userAddress = null;
+const contractAddress = "TLL3Ez552j5WqQx3LDBdr55W2C4MWH3Lcv"; // ✅ your deployed contract address
 
 const CONTRACT_ABI = [
-  // ✅ Only essential ABI entries needed for frontend interactions
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "decimals",
-    "outputs": [{ "name": "", "type": "uint8" }],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [{ "name": "_owner", "type": "address" }],
-    "name": "balanceOf",
-    "outputs": [{ "name": "", "type": "uint256" }],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
+  // ✅ Paste full verified ABI here, shortened for display
   {
     "constant": false,
     "inputs": [
@@ -34,8 +16,28 @@ const CONTRACT_ABI = [
     "payable": false,
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "decimals",
+    "outputs": [ { "name": "", "type": "uint8" } ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [ { "name": "_owner", "type": "address" } ],
+    "name": "balanceOf",
+    "outputs": [ { "name": "", "type": "uint256" } ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
   }
 ];
+
+let userAddress = null;
 
 window.addEventListener("load", async () => {
   if (!window.tronWeb || !window.tronWeb.defaultAddress.base58) {
@@ -50,7 +52,7 @@ window.addEventListener("load", async () => {
 document.getElementById("connect").addEventListener("click", async () => {
   try {
     if (window.tronLink) {
-      await window.tronLink.request({ method: 'tron_requestAccounts' });
+      await window.tronLink.request({ method: "tron_requestAccounts" });
       userAddress = window.tronWeb.defaultAddress.base58;
       document.getElementById("wallet").innerText = `Wallet: ${userAddress}`;
     }
@@ -63,9 +65,10 @@ document.getElementById("check-balance").addEventListener("click", async () => {
   try {
     const contract = await window.tronWeb.contract(CONTRACT_ABI, contractAddress);
     const balance = await contract.balanceOf(userAddress).call();
-    const decimals = await contract.decimals().call();
+    const decimalsRaw = await contract.decimals().call();
+    const decimals = parseInt(decimalsRaw);
     const formatted = window.tronWeb.toBigNumber(balance).dividedBy(10 ** decimals).toString();
-    document.getElementById("balance").innerText = `Balance: ${formatted} FUSDT`;
+    document.getElementById("balance").innerText = `Balance: ${formatted} FLASH USDT`;
   } catch (err) {
     console.error(err);
     document.getElementById("balance").innerText = `Error reading balance`;
@@ -78,13 +81,14 @@ document.getElementById("mint").addEventListener("click", async () => {
     if (!amount || isNaN(amount)) return alert("Invalid amount");
 
     const contract = await window.tronWeb.contract(CONTRACT_ABI, contractAddress);
-    const decimals = await contract.decimals().call();
-    const amountToMint = window.tronWeb.toBigNumber(amount).multipliedBy(10 ** decimals);
+    const decimalsRaw = await contract.decimals().call();
+    const decimals = parseInt(decimalsRaw);
+    const amountToMint = window.tronWeb.toBigNumber(amount).multipliedBy(10 ** decimals).integerValue();
     const duration = 120; // seconds
 
-    const tx = await contract.mint(userAddress, amountToMint.toFixed(), duration).send();
+    const tx = await contract.mint(userAddress, amountToMint.toString(), duration).send();
     console.log("Mint TX: ", tx);
-    document.getElementById("mint-status").innerText = `Minted ${amount} FUSDT. TX: ${tx}`;
+    document.getElementById("mint-status").innerText = `Minted ${amount} USDT. TX: ${tx}`;
   } catch (err) {
     console.error(err);
     document.getElementById("mint-status").innerText = `Mint failed: ${err.message}`;
