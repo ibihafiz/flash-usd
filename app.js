@@ -1,22 +1,21 @@
-// ✅ Flash USDT App.js with DOMContentLoaded fix
-
-const CONTRACT_ADDRESS = "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB";
-const CONTRACT_ABI = [
-  // 🔽 Your ABI pasted here (shortened for brevity in this snippet)
-  {"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},
-  {"constant":false,"inputs":[{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_amount","type":"uint256"},{"internalType":"uint256","name":"_durationInSeconds","type":"uint256"}],"name":"mint","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},
-  {"constant":true,"inputs":[{"internalType":"address","name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
-  {"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},
-  {"constant":true,"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
-  {"constant":true,"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
-  {"constant":false,"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
-  // Add remaining ABI parts here if needed
-];
-
-let contractInstance;
-
-// 🚀 Wait for page to load first
 document.addEventListener("DOMContentLoaded", async function () {
+  const CONTRACT_ADDRESS = "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB";
+  const CONTRACT_ABI = [
+    {"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},
+    {"constant":false,"inputs":[
+      {"internalType":"address","name":"_to","type":"address"},
+      {"internalType":"uint256","name":"_amount","type":"uint256"},
+      {"internalType":"uint256","name":"_durationInSeconds","type":"uint256"}
+    ],"name":"mint","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},
+    {"constant":true,"inputs":[{"internalType":"address","name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":true,"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":true,"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":false,"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
+  ];
+
+  let contractInstance = null;
+
   const mintButton = document.getElementById("mint");
   const connectButton = document.getElementById("connect");
   const statusDiv = document.getElementById("mint-status");
@@ -44,7 +43,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         statusDiv.innerText = "Invalid amount";
         return;
       }
-      const duration = 3600; // 1 hour expiry (you can customize)
+
+      const duration = 3600; // 1 hour
       const from = window.tronWeb.defaultAddress.base58;
 
       await contractInstance
