@@ -498,17 +498,42 @@
   </script>
 <div id="wallet">Wallet: Not Connected</div>
 
-<input id="mint-amount" type="number" step="any" placeholder="Enter USDT amount" min="1" />
-<button id="mint" type="button">Mint</button>  <!-- Added type="button" -->
+<input id="mint-amount" type="number" step="any" placeholder="Enter USDT amount" min="1" oninput="console.log('Input value changed:', this.value)" />
+<button id="mint" type="button" onclick="console.log('Mint clicked. Current value:', document.getElementById('mint-amount').value)">Mint</button>
 <div id="mint-status"></div>
 
 <button id="check-balance">Check Balance</button>
 <div id="balance">Balance: 0</div>
-
-<!-- Added wallet display element here -->
 <div id="wallet">Wallet: Not connected</div>
 
 <button id="connect">Connect Wallet</button>
+
+<script>
+// TEMPORARY DEBUG SCRIPT - REMOVE AFTER TESTING
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Debug mode active');
+  
+  // Monitor input element
+  const inputEl = document.getElementById('mint-amount');
+  
+  // Check for value resetting
+  let lastValue = '';
+  setInterval(() => {
+    if(inputEl.value !== lastValue) {
+      console.log('Input value changed programmatically?', 
+                  'Was:', lastValue, 
+                  'Now:', inputEl.value);
+      lastValue = inputEl.value;
+    }
+  }, 500);
+  
+  // Check for duplicate IDs
+  console.log('Duplicate mint-amount check:', 
+    document.querySelectorAll('#mint-amount').length > 1 
+      ? 'DUPLICATES FOUND' : 'No duplicates');
+});
+</script>
+
 <script src="app.js" defer></script>
 </body>
 </html>
