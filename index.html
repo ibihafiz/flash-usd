@@ -314,15 +314,17 @@
           </div>
           <span id="chainId"></span>
         </div>
-        <button class="btn btn-block pulse" id="connectButton" onclick="connectWallet()">Connect TronLink Wallet</button>
+        <!-- Changed id to "connect" -->
+        <button class="btn btn-block pulse" id="connect" onclick="connectWallet()">Connect TronLink Wallet</button>
       </div>
     </div>
 
     <div class="card">
       <h2 class="card-title">Mint Flash USDT</h2>
       <div class="form-group">
-        <label for="amount">Amount to Mint</label>
-        <input type="number" id="amount" placeholder="Enter amount (e.g., 100)" min="1">
+        <label for="mint-amount">Amount to Mint</label>
+        <!-- Changed id to "mint-amount" and added min="1" -->
+        <input type="number" id="mint-amount" placeholder="Enter amount (e.g., 100)" min="1">
         <p class="info-text">1 fUSDT = 1 USDT equivalent</p>
       </div>
       <div class="form-group">
@@ -330,7 +332,8 @@
         <input type="number" id="expiry" placeholder="Enter expiry time (e.g., 3600)" min="1">
         <p class="info-text">Example: 3600 seconds = 1 hour</p>
       </div>
-      <button class="btn btn-success btn-block" id="mintButton" onclick="mint()">Mint Flash USDT</button>
+      <!-- Changed id to "mint" and added type="button" -->
+      <button class="btn btn-success btn-block" id="mint" type="button" onclick="mint()">Mint Flash USDT</button>
     </div>
 
     <div class="card">
@@ -380,7 +383,10 @@
   </div>
 
   <script>
-    // ✅ Safely loaded after DOM
+    // Global variables to store input values
+    let currentMintAmount = 0;
+    let currentExpiryValue = 0;
+
     document.addEventListener("DOMContentLoaded", function () {
       const CONTRACT_ADDRESS = "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB";
       const NILE_CHAIN_ID = "0xcd8690dc";
@@ -397,11 +403,22 @@
         "type": "function"
       }];
 
+      // Store input values on change
+      document.getElementById("mint-amount").addEventListener("input", function(e) {
+        currentMintAmount = parseFloat(e.target.value) || 0;
+        console.log("Amount updated to:", currentMintAmount);
+      });
+      
+      document.getElementById("expiry").addEventListener("input", function(e) {
+        currentExpiryValue = parseInt(e.target.value) || 0;
+        console.log("Expiry updated to:", currentExpiryValue);
+      });
+
       window.updateUI = function () {
         const walletIndicator = document.getElementById("walletIndicator");
         const networkIndicator = document.getElementById("networkIndicator");
-        const connectButton = document.getElementById("connectButton");
-        const mintButton = document.getElementById("mintButton");
+        const connectButton = document.getElementById("connect");
+        const mintButton = document.getElementById("mint");
         const walletAddress = document.getElementById("walletAddress");
         const networkName = document.getElementById("networkName");
         const chainId = document.getElementById("chainId");
@@ -469,11 +486,20 @@
         try {
           const tronWeb = window.tronWeb;
           const address = tronWeb.defaultAddress.base58;
-          const amount = document.getElementById("amount").value;
-          const expiry = document.getElementById("expiry").value;
+          
+          // Use stored values instead of reading from DOM
+          const amount = currentMintAmount;
+          const expiry = currentExpiryValue;
 
-          if (!amount || !expiry) {
-            setStatus("❌ Please enter amount and expiry", "error");
+          console.log("Minting with:", {amount, expiry});
+
+          if (!amount || amount <= 0) {
+            setStatus("❌ Please enter a valid amount", "error");
+            return;
+          }
+          
+          if (!expiry || expiry <= 0) {
+            setStatus("❌ Please enter a valid expiry time", "error");
             return;
           }
 
@@ -485,8 +511,23 @@
           ).send({ feeLimit: 100000000 });
 
           setStatus(`✅ Mint successful! <a href="https://nile.tronscan.org/#/transaction/${tx}" target="_blank">View on Tronscan</a>`, "success");
+          
+          // Clear inputs after successful mint
+          document.getElementById("mint-amount").value = "";
+          document.getElementById("expiry").value = "";
+          currentMintAmount = 0;
+          currentExpiryValue = 0;
         } catch (e) {
-          setStatus("❌ " + (e.message || "Mint failed"), "error");
+          console.error("Mint error:", e);
+          let errorMsg = e.message || "Mint failed";
+          
+          if (errorMsg.includes("revert")) {
+            errorMsg = "Transaction reverted - are you the contract owner?";
+          } else if (errorMsg.includes("denied")) {
+            errorMsg = "Transaction denied by user";
+          }
+          
+          setStatus(`❌ ${errorMsg}`, "error");
         }
       };
 
@@ -496,44 +537,8 @@
       }
     });
   </script>
-<div id="wallet">Wallet: Not Connected</div>
-
-<input id="mint-amount" type="number" step="any" placeholder="Enter USDT amount" min="1" oninput="console.log('Input value changed:', this.value)" />
-<button id="mint" type="button" onclick="console.log('Mint clicked. Current value:', document.getElementById('mint-amount').value)">Mint</button>
-<div id="mint-status"></div>
-
-<button id="check-balance">Check Balance</button>
-<div id="balance">Balance: 0</div>
-<div id="wallet">Wallet: Not connected</div>
-
-<button id="connect">Connect Wallet</button>
-
-<script>
-// TEMPORARY DEBUG SCRIPT - REMOVE AFTER TESTING
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Debug mode active');
   
-  // Monitor input element
-  const inputEl = document.getElementById('mint-amount');
-  
-  // Check for value resetting
-  let lastValue = '';
-  setInterval(() => {
-    if(inputEl.value !== lastValue) {
-      console.log('Input value changed programmatically?', 
-                  'Was:', lastValue, 
-                  'Now:', inputEl.value);
-      lastValue = inputEl.value;
-    }
-  }, 500);
-  
-  // Check for duplicate IDs
-  console.log('Duplicate mint-amount check:', 
-    document.querySelectorAll('#mint-amount').length > 1 
-      ? 'DUPLICATES FOUND' : 'No duplicates');
-});
-</script>
-
-<script src="app.js" defer></script>
+  <!-- Removed all duplicate elements below this line -->
+  <script src="app.js" defer></script>
 </body>
 </html>
