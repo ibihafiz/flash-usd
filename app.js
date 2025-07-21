@@ -134,7 +134,7 @@ async function connectWallet() {
   }
 }
 
-// Mint tokens
+// Mint tokens - FIXED VERSION
 async function mint() {
   try {
     // Validate connection
@@ -180,45 +180,42 @@ async function mint() {
       return;
     }
 
-    // Simulate transaction first
-    try {
-      await contractInstance.mint(
-        window.tronWeb.address.fromHex(address),
-        tokenAmount,
-        currentExpiryValue
-      ).call();
-    } catch (simError) {
-      console.error("Simulation error:", simError);
-      throw new Error(`Contract rejected transaction: ${simError.message || simError}`);
-    }
-
     // Execute mint transaction
-    const tx = await contractInstance.mint(
+    setStatus("⏳ Sending transaction to TronLink...", "info");
+    
+    // Send transaction without waiting for response
+    const txPromise = contractInstance.mint(
       window.tronWeb.address.fromHex(address),
       tokenAmount,
       currentExpiryValue
     ).send({
-      feeLimit: 200000000, // Increased fee limit
-      callValue: 0,
-      shouldPollResponse: true
+      feeLimit: 300000000, // Higher fee limit (300 TRX)
+      callValue: 0
     });
 
-    // Verify transaction result
-    if (tx && tx.transaction && tx.transaction.txID) {
-      // Wait for transaction confirmation
-      const txInfo = await waitForTransactionConfirmation(tx.transaction.txID);
-      
-      if (txInfo.receipt && txInfo.receipt.result === 'SUCCESS') {
-        setStatus(`✅ Mint successful! <a href="https://nile.tronscan.org/#/transaction/${tx.transaction.txID}" target="_blank">View on Tronscan</a>`, "success");
-        document.getElementById("mint-amount").value = "";
-        document.getElementById("expiry").value = "3600";
-        currentMintAmount = 0;
-        currentExpiryValue = 3600;
-      } else {
-        throw new Error(`Transaction reverted: ${txInfo.result || txInfo.receipt.result}`);
-      }
-    } else {
+    // Handle transaction promise
+    const tx = await txPromise;
+    
+    // Get transaction ID
+    const txID = tx.transaction ? tx.transaction.txID : tx;
+    
+    if (!txID) {
       throw new Error("No transaction ID received");
+    }
+    
+    setStatus("⏳ Waiting for transaction confirmation...", "info");
+    
+    // Wait for transaction confirmation
+    const txInfo = await waitForTransactionConfirmation(txID);
+    
+    if (txInfo.receipt && txInfo.receipt.result === 'SUCCESS') {
+      setStatus(`✅ Mint successful! <a href="https://nile.tronscan.org/#/transaction/${txID}" target="_blank">View on Tronscan</a>`, "success");
+      document.getElementById("mint-amount").value = "";
+      document.getElementById("expiry").value = "3600";
+      currentMintAmount = 0;
+      currentExpiryValue = 3600;
+    } else {
+      throw new Error(`Transaction reverted: ${txInfo.result || 'Unknown reason'}`);
     }
   } catch (e) {
     console.error("Mint error:", e);
@@ -230,11 +227,13 @@ async function mint() {
     } else if (e.message.includes("denied")) {
       errorMsg = "Transaction denied by user";
     } else if (e.message.includes("insufficient")) {
-      errorMsg = "Insufficient energy/bandwidth";
+      errorMsg = "Insufficient energy/bandwidth - get more test TRX";
     } else if (e.message.includes("onlyOwner")) {
       errorMsg = "Only contract owner can mint tokens";
     } else if (e.message.includes("Contract rejected")) {
       errorMsg = e.message;
+    } else if (e.message.includes("No transaction ID")) {
+      errorMsg = "TronLink didn't return transaction ID";
     } else {
       errorMsg = e.message || "Unknown error";
     }
@@ -246,16 +245,27 @@ async function mint() {
 // Helper to wait for transaction confirmation
 async function waitForTransactionConfirmation(txID) {
   return new Promise((resolve, reject) => {
+    let attempts = 0;
+    const maxAttempts = 30; // 30 attempts * 2 seconds = 60 seconds timeout
+    
     const checkInterval = setInterval(async () => {
       try {
+        attempts++;
         const txInfo = await window.tronWeb.trx.getTransactionInfo(txID);
+        
         if (txInfo) {
           clearInterval(checkInterval);
           resolve(txInfo);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkInterval);
+          reject(new Error("Transaction confirmation timeout"));
         }
       } catch (e) {
-        // Continue waiting
+        if (attempts >= maxAttempts) {
+          clearInterval(checkInterval);
+          reject(new Error("Transaction confirmation timeout"));
+        }
       }
-    }, 2000);
+    }, 2000); // Check every 2 seconds
   });
 }
