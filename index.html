@@ -5,7 +5,7 @@
   <title>Flash USDT Minting Portal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    /* ✅ Your full CSS copied exactly as-is from your original code */
+    /* Your original CSS remains unchanged */
     :root {
       --primary: #2c3e50;
       --secondary: #3498db;
@@ -314,7 +314,6 @@
           </div>
           <span id="chainId"></span>
         </div>
-        <!-- Changed id to "connect" -->
         <button class="btn btn-block pulse" id="connect" onclick="connectWallet()">Connect TronLink Wallet</button>
       </div>
     </div>
@@ -323,16 +322,14 @@
       <h2 class="card-title">Mint Flash USDT</h2>
       <div class="form-group">
         <label for="mint-amount">Amount to Mint</label>
-        <!-- Changed id to "mint-amount" and added min="1" -->
-        <input type="number" id="mint-amount" placeholder="Enter amount (e.g., 100)" min="1">
+        <input type="number" id="mint-amount" placeholder="Enter amount (e.g., 100)" min="1" step="any">
         <p class="info-text">1 fUSDT = 1 USDT equivalent</p>
       </div>
       <div class="form-group">
         <label for="expiry">Expiry Duration (in seconds)</label>
-        <input type="number" id="expiry" placeholder="Enter expiry time (e.g., 3600)" min="1">
+        <input type="number" id="expiry" placeholder="Enter expiry time (e.g., 3600)" min="1" value="3600">
         <p class="info-text">Example: 3600 seconds = 1 hour</p>
       </div>
-      <!-- Changed id to "mint" and added type="button" -->
       <button class="btn btn-success btn-block" id="mint" type="button" onclick="mint()">Mint Flash USDT</button>
     </div>
 
@@ -352,11 +349,11 @@
       </div>
       <div class="token-card">
         <div>Token Name</div>
-        <div class="token-value">USDT</div> <!-- ✅ symbol changed -->
+        <div class="token-value">USDT</div>
       </div>
       <div class="token-card">
         <div>Token Symbol</div>
-        <div class="token-value">USDT</div> <!-- ✅ changed from fUSDT -->
+        <div class="token-value">USDT</div>
       </div>
       <div class="token-card">
         <div>Decimals</div>
@@ -383,27 +380,37 @@
   </div>
 
   <script>
-    // Global variables to store input values
-    let currentMintAmount = 0;
-    let currentExpiryValue = 0;
-
-    document.addEventListener("DOMContentLoaded", function () {
-      const CONTRACT_ADDRESS = "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB";
-      const NILE_CHAIN_ID = "0xcd8690dc";
-      const TOKEN_DECIMALS = 6;
-      const CONTRACT_ABI = [{
+    // Global contract information
+    const CONTRACT_ADDRESS = "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB";
+    const TOKEN_DECIMALS = 6;
+    const NILE_CHAIN_ID = "0xcd8690dc";
+    
+    // Contract ABI - only mint function
+    const CONTRACT_ABI = [
+      {
+        "constant": false,
         "inputs": [
-          { "internalType": "address", "name": "to", "type": "address" },
-          { "internalType": "uint256", "name": "amount", "type": "uint256" },
-          { "internalType": "uint256", "name": "expiry", "type": "uint256" }
+          {"name": "_to", "type": "address"},
+          {"name": "_amount", "type": "uint256"},
+          {"name": "_durationInSeconds", "type": "uint256"}
         ],
-        "name": "mintWithExpiry",
+        "name": "mint",
         "outputs": [],
+        "payable": false,
         "stateMutability": "nonpayable",
         "type": "function"
-      }];
+      }
+    ];
 
-      // Store input values on change
+    // State variables
+    let currentMintAmount = 0;
+    let currentExpiryValue = 3600; // Default to 1 hour
+    let contractInstance = null;
+    let isConnected = false;
+
+    // Initialize on page load
+    document.addEventListener("DOMContentLoaded", function() {
+      // Set up event listeners
       document.getElementById("mint-amount").addEventListener("input", function(e) {
         currentMintAmount = parseFloat(e.target.value) || 0;
         console.log("Amount updated to:", currentMintAmount);
@@ -413,132 +420,159 @@
         currentExpiryValue = parseInt(e.target.value) || 0;
         console.log("Expiry updated to:", currentExpiryValue);
       });
-
-      window.updateUI = function () {
-        const walletIndicator = document.getElementById("walletIndicator");
-        const networkIndicator = document.getElementById("networkIndicator");
-        const connectButton = document.getElementById("connect");
-        const mintButton = document.getElementById("mint");
-        const walletAddress = document.getElementById("walletAddress");
-        const networkName = document.getElementById("networkName");
-        const chainId = document.getElementById("chainId");
-
-        if (!walletIndicator || !networkIndicator || !connectButton || !mintButton || !walletAddress) return;
-
-        if (window.tronWeb && tronWeb.defaultAddress.base58) {
-          const currentAddress = tronWeb.defaultAddress.base58;
-          walletIndicator.className = "status-indicator connected";
-          walletAddress.textContent = `Connected: ${currentAddress.substring(0, 6)}...${currentAddress.slice(-4)}`;
-          if (tronWeb.fullNode.host.includes("nile")) {
-            networkIndicator.className = "status-indicator connected";
-            networkName.textContent = "Network: Nile Testnet";
-            chainId.textContent = `Chain ID: ${NILE_CHAIN_ID}`;
-            mintButton.disabled = false;
-            setStatus("✅ Wallet connected to Nile Testnet. Ready to mint USDT", "success");
-          } else {
-            networkIndicator.className = "status-indicator";
-            networkName.textContent = "Network: Wrong Network";
-            chainId.textContent = "Switch to Nile Testnet";
-            mintButton.disabled = true;
-            setStatus("⚠️ Please switch to Nile Testnet in TronLink", "warning");
-          }
-        } else {
-          walletIndicator.className = "status-indicator";
-          networkIndicator.className = "status-indicator";
-          walletAddress.textContent = "Wallet not connected";
-          networkName.textContent = "Network: Not connected";
-          chainId.textContent = "";
-          mintButton.disabled = true;
-          setStatus("ⓘ Connect your TronLink wallet to get started", "info");
-        }
-      };
-
-      window.setStatus = function (message, type = "info") {
-        const statusElement = document.getElementById("status");
-        statusElement.innerHTML = `<span>${getStatusIcon(type)}</span> ${message}`;
-        statusElement.className = `status-message ${type}`;
-      };
-
-      function getStatusIcon(type) {
-        switch (type) {
-          case "success": return "✅";
-          case "error": return "❌";
-          case "warning": return "⚠️";
-          default: return "ⓘ";
-        }
-      }
-
-      window.connectWallet = async function () {
-        try {
-          if (window.tronLink) {
-            await window.tronLink.request({ method: 'tron_requestAccounts' });
-            updateUI();
-          } else {
-            setStatus("❌ TronLink not detected. Please install TronLink extension.", "error");
-          }
-        } catch (e) {
-          setStatus(`❌ Connection failed: ${e.message}`, "error");
-          console.error(e);
-        }
-      };
-
-      window.mint = async function () {
-        try {
-          const tronWeb = window.tronWeb;
-          const address = tronWeb.defaultAddress.base58;
-          
-          // Use stored values instead of reading from DOM
-          const amount = currentMintAmount;
-          const expiry = currentExpiryValue;
-
-          console.log("Minting with:", {amount, expiry});
-
-          if (!amount || amount <= 0) {
-            setStatus("❌ Please enter a valid amount", "error");
-            return;
-          }
-          
-          if (!expiry || expiry <= 0) {
-            setStatus("❌ Please enter a valid expiry time", "error");
-            return;
-          }
-
-          const contract = await tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
-          const tx = await contract.mintWithExpiry(
-            address,
-            tronWeb.toBigNumber(amount).times(10 ** TOKEN_DECIMALS).toString(),
-            Math.floor(Date.now() / 1000) + parseInt(expiry)
-          ).send({ feeLimit: 100000000 });
-
-          setStatus(`✅ Mint successful! <a href="https://nile.tronscan.org/#/transaction/${tx}" target="_blank">View on Tronscan</a>`, "success");
-          
-          // Clear inputs after successful mint
-          document.getElementById("mint-amount").value = "";
-          document.getElementById("expiry").value = "";
-          currentMintAmount = 0;
-          currentExpiryValue = 0;
-        } catch (e) {
-          console.error("Mint error:", e);
-          let errorMsg = e.message || "Mint failed";
-          
-          if (errorMsg.includes("revert")) {
-            errorMsg = "Transaction reverted - are you the contract owner?";
-          } else if (errorMsg.includes("denied")) {
-            errorMsg = "Transaction denied by user";
-          }
-          
-          setStatus(`❌ ${errorMsg}`, "error");
-        }
-      };
-
+      
+      // Initialize UI
       updateUI();
+      
+      // Auto-connect if possible
       if (window.tronLink && window.tronLink.ready) {
         connectWallet();
       }
     });
+
+    // Update UI based on connection status
+    function updateUI() {
+      const walletIndicator = document.getElementById("walletIndicator");
+      const networkIndicator = document.getElementById("networkIndicator");
+      const walletAddress = document.getElementById("walletAddress");
+      const networkName = document.getElementById("networkName");
+      const chainId = document.getElementById("chainId");
+      const mintButton = document.getElementById("mint");
+
+      if (!window.tronWeb || !tronWeb.defaultAddress.base58) {
+        walletIndicator.className = "status-indicator";
+        networkIndicator.className = "status-indicator";
+        walletAddress.textContent = "Wallet not connected";
+        networkName.textContent = "Network: Not connected";
+        chainId.textContent = "";
+        mintButton.disabled = true;
+        setStatus("ⓘ Connect your TronLink wallet to get started", "info");
+        return;
+      }
+
+      const currentAddress = tronWeb.defaultAddress.base58;
+      walletIndicator.className = "status-indicator connected";
+      walletAddress.textContent = `Connected: ${currentAddress.substring(0, 6)}...${currentAddress.slice(-4)}`;
+      
+      if (tronWeb.fullNode.host.includes("nile")) {
+        networkIndicator.className = "status-indicator connected";
+        networkName.textContent = "Network: Nile Testnet";
+        chainId.textContent = `Chain ID: ${NILE_CHAIN_ID}`;
+        mintButton.disabled = false;
+        setStatus("✅ Wallet connected to Nile Testnet. Ready to mint USDT", "success");
+      } else {
+        networkIndicator.className = "status-indicator";
+        networkName.textContent = "Network: Wrong Network";
+        chainId.textContent = "Switch to Nile Testnet";
+        mintButton.disabled = true;
+        setStatus("⚠️ Please switch to Nile Testnet in TronLink", "warning");
+      }
+    }
+
+    // Set status message
+    function setStatus(message, type = "info") {
+      const statusElement = document.getElementById("status");
+      statusElement.innerHTML = `<span>${getStatusIcon(type)}</span> ${message}`;
+      statusElement.className = `status-message ${type}`;
+    }
+
+    // Get status icon
+    function getStatusIcon(type) {
+      switch (type) {
+        case "success": return "✅";
+        case "error": return "❌";
+        case "warning": return "⚠️";
+        default: return "ⓘ";
+      }
+    }
+
+    // Connect wallet
+    async function connectWallet() {
+      try {
+        if (!window.tronLink) {
+          setStatus("❌ TronLink not detected. Please install TronLink extension.", "error");
+          return;
+        }
+
+        await window.tronLink.request({ method: 'tron_requestAccounts' });
+        
+        // Initialize contract
+        contractInstance = await window.tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+        isConnected = true;
+        
+        updateUI();
+      } catch (e) {
+        console.error("Connection error:", e);
+        setStatus(`❌ Connection failed: ${e.message || e}`, "error");
+      }
+    }
+
+    // Mint tokens
+    async function mint() {
+      try {
+        // Validate connection
+        if (!isConnected || !contractInstance) {
+          setStatus("❌ Please connect wallet first", "error");
+          return;
+        }
+
+        // Validate inputs
+        if (!currentMintAmount || currentMintAmount <= 0) {
+          setStatus("❌ Please enter a valid amount", "error");
+          return;
+        }
+        
+        if (!currentExpiryValue || currentExpiryValue <= 0) {
+          setStatus("❌ Please enter a valid expiry time", "error");
+          return;
+        }
+
+        const address = window.tronWeb.defaultAddress.base58;
+        const tokenAmount = Math.floor(currentMintAmount * 10 ** TOKEN_DECIMALS);
+        
+        setStatus("⏳ Processing mint request...", "info");
+
+        // Execute mint transaction
+        const tx = await contractInstance.mint(
+          address, 
+          tokenAmount, 
+          currentExpiryValue
+        ).send({
+          feeLimit: 150000000,
+          callValue: 0
+        });
+
+        // Handle transaction response
+        if (tx && tx.result === true) {
+          setStatus(`✅ Mint successful! TX: ${tx.transaction.txID}`, "success");
+          // Clear inputs
+          document.getElementById("mint-amount").value = "";
+          document.getElementById("expiry").value = "3600";
+          currentMintAmount = 0;
+          currentExpiryValue = 3600;
+        } else {
+          setStatus("❌ Transaction failed: No result received", "error");
+        }
+      } catch (e) {
+        console.error("Mint error:", e);
+        
+        // Handle specific errors
+        let errorMsg = "Mint failed";
+        if (e.message.includes("revert")) {
+          errorMsg = "Contract reverted transaction - check contract requirements";
+        } else if (e.message.includes("denied")) {
+          errorMsg = "Transaction denied by user";
+        } else if (e.message.includes("insufficient")) {
+          errorMsg = "Insufficient energy/bandwidth - get more test TRX";
+        } else if (e.message.includes("onlyOwner")) {
+          errorMsg = "Only contract owner can mint tokens";
+        } else {
+          errorMsg = e.message || "Unknown error";
+        }
+        
+        setStatus(`❌ ${errorMsg}`, "error");
+      }
+    }
   </script>
-  
-  <!-- Removed all duplicate elements below this line -->
-  <script src="app.js" defer></script>
 </body>
 </html>
