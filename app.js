@@ -1,36 +1,32 @@
 document.addEventListener("DOMContentLoaded", function () {
   const CONTRACT_ADDRESS = "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB";
-
-  // ... (keep your existing ABI here) ...
-
+  
+  // Your contract ABI here
+  const CONTRACT_ABI = [ /* ... */ ];
+  
   let contractInstance;
-  let isConnected = false; // Track connection state
+  let isConnected = false;
+  let currentMintAmount = 0; // Store input value separately
 
   const connectButton = document.getElementById("connect");
   const mintButton = document.getElementById("mint");
   const statusDiv = document.getElementById("mint-status");
   const balanceDiv = document.getElementById("balance");
+  const amountInput = document.getElementById("mint-amount");
 
-  // Initialize TronWeb on load
+  // Initialize TronWeb
   async function initTronWeb() {
     if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
       try {
-        // Request account access if needed
         await window.tronWeb.request({method: 'tron_requestAccounts'});
-        
         const walletAddress = window.tronWeb.defaultAddress.base58;
         document.getElementById("wallet").innerText = "Wallet: " + walletAddress;
         
-        contractInstance = await window.tronWeb.contract(
-          CONTRACT_ABI,
-          CONTRACT_ADDRESS
-        );
-        
+        contractInstance = await window.tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
         isConnected = true;
         statusDiv.innerText = "✅ Wallet connected & contract loaded";
         return true;
       } catch (err) {
-        console.error("Connection error:", err);
         statusDiv.innerText = "❌ Connection failed: " + err.message;
         return false;
       }
@@ -47,68 +43,67 @@ document.addEventListener("DOMContentLoaded", function () {
     isConnected = await initTronWeb();
   });
 
+  // NEW: Capture input value on every change
+  amountInput.addEventListener("input", function(e) {
+    try {
+      const rawValue = e.target.value.trim();
+      if (!rawValue) {
+        currentMintAmount = 0;
+        return;
+      }
+      
+      const parsed = parseFloat(rawValue);
+      if (!isNaN(parsed) && parsed > 0) {
+        currentMintAmount = parsed;
+        console.log("Input updated:", currentMintAmount);
+      }
+    } catch (error) {
+      console.warn("Input parsing error:", error);
+      currentMintAmount = 0;
+    }
+  });
+
   mintButton.addEventListener("click", async () => {
-    // Ensure wallet is connected
     if (!isConnected || !contractInstance) {
       statusDiv.innerText = "❌ Please connect wallet first";
       return;
     }
 
     try {
-      const amountInput = document.getElementById("mint-amount");
-      if (!amountInput) {
-        statusDiv.innerText = "❌ Mint input not found";
-        return;
-      }
-
-      // Get raw input value and trim whitespace
-      const rawValue = amountInput.value.trim();
-      console.log("Raw input value:", rawValue);  // Debug log
+      // Use the stored value instead of reading from DOM
+      const amount = currentMintAmount;
+      console.log("Attempting mint with amount:", amount);
       
-      // Validate input
-      if (!rawValue) {
-        statusDiv.innerText = "❌ Please enter an amount";
-        return;
-      }
-      
-      const amount = parseFloat(rawValue);
-      if (isNaN(amount) || amount <= 0) {
-        statusDiv.innerText = "❌ Amount must be a positive number";
+      if (amount <= 0) {
+        statusDiv.innerText = "❌ Amount must be greater than 0";
         return;
       }
 
       const duration = 3600; // 1 hour
+      const tokenAmount = amount * 1000000; // 10^6 decimals
       const from = window.tronWeb.defaultAddress.base58;
 
-      // Convert to token units (6 decimals)
-      const tokenAmount = amount * 1000000; // 10^6
-      
       statusDiv.innerText = "⏳ Processing mint...";
       
       // Execute mint transaction
-      const result = await contractInstance
-        .mint(from, tokenAmount, duration)
-        .send({
-          feeLimit: 100000000  // Set appropriate fee limit
-        });
+      const result = await contractInstance.mint(
+        from, 
+        tokenAmount, 
+        duration
+      ).send({
+        feeLimit: 100000000,
+        callValue: 0
+      });
 
       console.log("Mint result:", result);
       statusDiv.innerText = `✅ Minted ${amount} Flash USDT! TX: ${result}`;
       
-      // Clear input after successful mint
+      // Reset input
       amountInput.value = "";
+      currentMintAmount = 0;
     } catch (err) {
       console.error("Mint error:", err);
-      
-      // Handle specific error cases
-      if (err.message.includes("revert")) {
-        statusDiv.innerText = "❌ Contract reverted: " + 
-          (err.message.split("revert")[1] || "Check contract requirements");
-      } else if (err.message.includes("denied transaction")) {
-        statusDiv.innerText = "❌ Transaction denied by user";
-      } else {
-        statusDiv.innerText = "❌ Mint failed: " + err.message;
-      }
+      statusDiv.innerText = "❌ Mint failed: " + (err.message || "Check contract requirements");
     }
   });
 
@@ -121,12 +116,9 @@ document.addEventListener("DOMContentLoaded", function () {
     try {
       const address = window.tronWeb.defaultAddress.base58;
       const balance = await contractInstance.balanceOf(address).call();
-      
-      // Convert from token units (6 decimals)
       const formattedBalance = balance / 1000000; 
       balanceDiv.innerText = `Balance: ${formattedBalance} Flash USDT`;
     } catch (err) {
-      console.error("Balance error:", err);
       balanceDiv.innerText = "❌ Balance check failed";
     }
   });
