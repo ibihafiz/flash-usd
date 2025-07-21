@@ -1,504 +1,261 @@
-document.addEventListener("DOMContentLoaded", function () {
-  const CONTRACT_ADDRESS = "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB";
+// Global contract information
+const CONTRACT_ADDRESS = "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB";
+const TOKEN_DECIMALS = 6;
+const NILE_CHAIN_ID = "0xcd8690dc";
+
+// Contract ABI - including mint and owner functions
+const CONTRACT_ABI = [
+  {
+    "constant": false,
+    "inputs": [
+      {"name": "_to", "type": "address"},
+      {"name": "_amount", "type": "uint256"},
+      {"name": "_durationInSeconds", "type": "uint256"}
+    ],
+    "name": "mint",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{"name": "", "type": "address"}],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+// State variables
+let currentMintAmount = 0;
+let currentExpiryValue = 3600; // Default to 1 hour
+let contractInstance = null;
+let isConnected = false;
+
+// Initialize on page load
+document.addEventListener("DOMContentLoaded", function() {
+  // Set up event listeners
+  document.getElementById("mint-amount").addEventListener("input", function(e) {
+    currentMintAmount = parseFloat(e.target.value) || 0;
+    console.log("Amount updated to:", currentMintAmount);
+  });
   
-  // Your actual contract ABI
-  const CONTRACT_ABI = [
-    {
-      "inputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "constructor"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "spender",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "value",
-          "type": "uint256"
-        }
-      ],
-      "name": "Approval",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "to",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "value",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "expiry",
-          "type": "uint256"
-        }
-      ],
-      "name": "Mint",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "from",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "to",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "value",
-          "type": "uint256"
-        }
-      ],
-      "name": "Transfer",
-      "type": "event"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "allowance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_spender",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_value",
-          "type": "uint256"
-        }
-      ],
-      "name": "approve",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_owner",
-          "type": "address"
-        }
-      ],
-      "name": "balanceOf",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "balances",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "expiry",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "decimals",
-      "outputs": [
-        {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_to",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_durationInSeconds",
-          "type": "uint256"
-        }
-      ],
-      "name": "mint",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "name",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "owner",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "symbol",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "totalSupply",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_to",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_value",
-          "type": "uint256"
-        }
-      ],
-      "name": "transfer",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_from",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_to",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_value",
-          "type": "uint256"
-        }
-      ],
-      "name": "transferFrom",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "newOwner",
-          "type": "address"
-        }
-      ],
-      "name": "transferOwnership",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    }
-  ];
+  document.getElementById("expiry").addEventListener("input", function(e) {
+    currentExpiryValue = parseInt(e.target.value) || 0;
+    console.log("Expiry updated to:", currentExpiryValue);
+  });
+  
+  // Initialize UI
+  updateUI();
+  
+  // Auto-connect if possible
+  if (window.tronLink && window.tronLink.ready) {
+    connectWallet();
+  }
+});
 
-  let contractInstance;
-  let isConnected = false;
-  let currentMintAmount = 0; // Stores the current input value
-
-  // Get DOM elements
-  const connectButton = document.getElementById("connect");
+// Update UI based on connection status
+function updateUI() {
+  const walletIndicator = document.getElementById("walletIndicator");
+  const networkIndicator = document.getElementById("networkIndicator");
+  const walletAddress = document.getElementById("walletAddress");
+  const networkName = document.getElementById("networkName");
+  const chainId = document.getElementById("chainId");
   const mintButton = document.getElementById("mint");
-  const statusDiv = document.getElementById("mint-status");
-  const balanceDiv = document.getElementById("balance");
-  const walletDiv = document.getElementById("wallet");
-  const amountInput = document.getElementById("mint-amount");
 
-  // Initialize TronWeb
-  async function initTronWeb() {
-    if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
-      try {
-        // Request account access
-        await window.tronWeb.request({method: 'tron_requestAccounts'});
-        
-        // Update wallet display
-        const walletAddress = window.tronWeb.defaultAddress.base58;
-        walletDiv.innerText = "Wallet: " + walletAddress;
-        
-        // Load contract
-        contractInstance = await window.tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
-        isConnected = true;
-        statusDiv.innerText = "✅ Wallet connected & contract loaded";
-        return true;
-      } catch (err) {
-        statusDiv.innerText = "❌ Connection failed: " + (err.message || err);
-        return false;
-      }
-    } else {
-      statusDiv.innerText = "❌ TronLink not detected - please install extension";
-      return false;
-    }
+  if (!window.tronWeb || !tronWeb.defaultAddress.base58) {
+    walletIndicator.className = "status-indicator";
+    networkIndicator.className = "status-indicator";
+    walletAddress.textContent = "Wallet not connected";
+    networkName.textContent = "Network: Not connected";
+    chainId.textContent = "";
+    mintButton.disabled = true;
+    setStatus("ⓘ Connect your TronLink wallet to get started", "info");
+    return;
   }
 
-  // Initialize on page load
-  initTronWeb();
+  const currentAddress = tronWeb.defaultAddress.base58;
+  walletIndicator.className = "status-indicator connected";
+  walletAddress.textContent = `Connected: ${currentAddress.substring(0, 6)}...${currentAddress.slice(-4)}`;
+  
+  if (tronWeb.fullNode.host.includes("nile")) {
+    networkIndicator.className = "status-indicator connected";
+    networkName.textContent = "Network: Nile Testnet";
+    chainId.textContent = `Chain ID: ${NILE_CHAIN_ID}`;
+    mintButton.disabled = false;
+    setStatus("✅ Wallet connected to Nile Testnet. Ready to mint USDT", "success");
+  } else {
+    networkIndicator.className = "status-indicator";
+    networkName.textContent = "Network: Wrong Network";
+    chainId.textContent = "Switch to Nile Testnet";
+    mintButton.disabled = true;
+    setStatus("⚠️ Please switch to Nile Testnet in TronLink", "warning");
+  }
+}
 
-  // Connect button handler
-  connectButton.addEventListener("click", async () => {
-    isConnected = await initTronWeb();
-  });
+// Set status message
+function setStatus(message, type = "info") {
+  const statusElement = document.getElementById("status");
+  statusElement.innerHTML = `<span>${getStatusIcon(type)}</span> ${message}`;
+  statusElement.className = `status-message ${type}`;
+}
 
-  // Track input value changes
-  amountInput.addEventListener("input", function(e) {
-    try {
-      const rawValue = e.target.value.trim();
-      if (!rawValue) {
-        currentMintAmount = 0;
-        return;
-      }
-      
-      const parsed = parseFloat(rawValue);
-      if (!isNaN(parsed) {
-        currentMintAmount = parsed;
-        console.log("Input updated to:", currentMintAmount);
-      }
-    } catch (error) {
-      console.warn("Input parsing error:", error);
-      currentMintAmount = 0;
-    }
-  });
+// Get status icon
+function getStatusIcon(type) {
+  switch (type) {
+    case "success": return "✅";
+    case "error": return "❌";
+    case "warning": return "⚠️";
+    default: return "ⓘ";
+  }
+}
 
-  // Mint button handler
-  mintButton.addEventListener("click", async () => {
-    if (!isConnected || !contractInstance) {
-      statusDiv.innerText = "❌ Please connect wallet first";
+// Connect wallet
+async function connectWallet() {
+  try {
+    if (!window.tronLink) {
+      setStatus("❌ TronLink not detected. Please install TronLink extension.", "error");
       return;
     }
 
-    try {
-      // Use the stored value
-      const amount = currentMintAmount;
-      console.log("Attempting mint with amount:", amount);
-      
-      // Validate amount
-      if (amount <= 0 || isNaN(amount)) {
-        statusDiv.innerText = "❌ Amount must be greater than 0";
-        return;
-      }
+    await window.tronLink.request({ method: 'tron_requestAccounts' });
+    
+    // Initialize contract
+    contractInstance = await window.tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+    isConnected = true;
+    
+    updateUI();
+  } catch (e) {
+    console.error("Connection error:", e);
+    setStatus(`❌ Connection failed: ${e.message || e}`, "error");
+  }
+}
 
-      const duration = 3600; // 1 hour in seconds
-      const tokenAmount = Math.floor(amount * 1000000); // Convert to 6 decimals
-      const from = window.tronWeb.defaultAddress.base58;
-
-      statusDiv.innerText = "⏳ Processing mint...";
-      
-      // Execute mint transaction
-      const result = await contractInstance.mint(
-        from, 
-        tokenAmount, 
-        duration
-      ).send({
-        feeLimit: 100000000, // Sufficient fee limit
-        callValue: 0 // No TRX sent with transaction
-      });
-
-      console.log("Mint transaction result:", result);
-      statusDiv.innerHTML = `✅ Successfully minted ${amount} Flash USDT!<br>Transaction ID: ${result}`;
-      
-      // Reset input
-      amountInput.value = "";
-      currentMintAmount = 0;
-      
-      // Update balance automatically after 10 seconds
-      setTimeout(() => {
-        document.getElementById("check-balance").click();
-      }, 10000);
-    } catch (err) {
-      console.error("Mint transaction failed:", err);
-      
-      let errorMessage = "Mint failed";
-      if (err.message.includes("revert")) {
-        errorMessage = "Contract reverted transaction - are you the owner?";
-      } else if (err.message.includes("denied")) {
-        errorMessage = "Transaction denied by user";
-      } else if (err.message.includes("insufficient")) {
-        errorMessage = "Insufficient energy/bandwidth";
-      }
-      
-      statusDiv.innerText = `❌ ${errorMessage}`;
-    }
-  });
-
-  // Balance check handler
-  document.getElementById("check-balance").addEventListener("click", async () => {
+// Mint tokens
+async function mint() {
+  try {
+    // Validate connection
     if (!isConnected || !contractInstance) {
-      balanceDiv.innerText = "❌ Connect wallet first";
+      setStatus("❌ Please connect wallet first", "error");
+      return;
+    }
+
+    // Validate inputs
+    if (!currentMintAmount || currentMintAmount <= 0) {
+      setStatus("❌ Please enter a valid amount", "error");
       return;
     }
     
-    try {
-      const address = window.tronWeb.defaultAddress.base58;
-      const balance = await contractInstance.balanceOf(address).call();
-      const formattedBalance = balance / 1000000; // Convert from 6 decimals
-      balanceDiv.innerText = `Balance: ${formattedBalance} Flash USDT`;
-    } catch (err) {
-      console.error("Balance check error:", err);
-      balanceDiv.innerText = "❌ Failed to fetch balance";
+    if (!currentExpiryValue || currentExpiryValue <= 0) {
+      setStatus("❌ Please enter a valid expiry time", "error");
+      return;
     }
+
+    const address = window.tronWeb.defaultAddress.base58;
+    const tokenAmount = Math.floor(currentMintAmount * 10 ** TOKEN_DECIMALS);
+    
+    setStatus("⏳ Processing mint request...", "info");
+    
+    // Debug parameters
+    console.log("Mint Parameters:", {
+      address: window.tronWeb.address.fromHex(address),
+      amount: tokenAmount,
+      duration: currentExpiryValue,
+      hexAddress: window.tronWeb.defaultAddress.hex
+    });
+
+    // Check contract ownership
+    try {
+      const owner = await contractInstance.owner().call();
+      console.log("Contract owner:", owner);
+      if (owner !== window.tronWeb.defaultAddress.hex.toLowerCase()) {
+        throw new Error("You are not the contract owner!");
+      }
+    } catch (ownerErr) {
+      console.error("Owner check error:", ownerErr);
+      setStatus(`❌ Contract error: ${ownerErr.message}`, "error");
+      return;
+    }
+
+    // Simulate transaction first
+    try {
+      await contractInstance.mint(
+        window.tronWeb.address.fromHex(address),
+        tokenAmount,
+        currentExpiryValue
+      ).call();
+    } catch (simError) {
+      console.error("Simulation error:", simError);
+      throw new Error(`Contract rejected transaction: ${simError.message || simError}`);
+    }
+
+    // Execute mint transaction
+    const tx = await contractInstance.mint(
+      window.tronWeb.address.fromHex(address),
+      tokenAmount,
+      currentExpiryValue
+    ).send({
+      feeLimit: 200000000, // Increased fee limit
+      callValue: 0,
+      shouldPollResponse: true
+    });
+
+    // Verify transaction result
+    if (tx && tx.transaction && tx.transaction.txID) {
+      // Wait for transaction confirmation
+      const txInfo = await waitForTransactionConfirmation(tx.transaction.txID);
+      
+      if (txInfo.receipt && txInfo.receipt.result === 'SUCCESS') {
+        setStatus(`✅ Mint successful! <a href="https://nile.tronscan.org/#/transaction/${tx.transaction.txID}" target="_blank">View on Tronscan</a>`, "success");
+        document.getElementById("mint-amount").value = "";
+        document.getElementById("expiry").value = "3600";
+        currentMintAmount = 0;
+        currentExpiryValue = 3600;
+      } else {
+        throw new Error(`Transaction reverted: ${txInfo.result || txInfo.receipt.result}`);
+      }
+    } else {
+      throw new Error("No transaction ID received");
+    }
+  } catch (e) {
+    console.error("Mint error:", e);
+    
+    // Handle specific errors
+    let errorMsg = "Mint failed";
+    if (e.message.includes("revert")) {
+      errorMsg = "Contract reverted transaction";
+    } else if (e.message.includes("denied")) {
+      errorMsg = "Transaction denied by user";
+    } else if (e.message.includes("insufficient")) {
+      errorMsg = "Insufficient energy/bandwidth";
+    } else if (e.message.includes("onlyOwner")) {
+      errorMsg = "Only contract owner can mint tokens";
+    } else if (e.message.includes("Contract rejected")) {
+      errorMsg = e.message;
+    } else {
+      errorMsg = e.message || "Unknown error";
+    }
+    
+    setStatus(`❌ ${errorMsg}`, "error");
+  }
+}
+
+// Helper to wait for transaction confirmation
+async function waitForTransactionConfirmation(txID) {
+  return new Promise((resolve, reject) => {
+    const checkInterval = setInterval(async () => {
+      try {
+        const txInfo = await window.tronWeb.trx.getTransactionInfo(txID);
+        if (txInfo) {
+          clearInterval(checkInterval);
+          resolve(txInfo);
+        }
+      } catch (e) {
+        // Continue waiting
+      }
+    }, 2000);
   });
-});
+}
