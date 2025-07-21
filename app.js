@@ -137,37 +137,33 @@ async function connectWallet() {
 // Mint tokens - FIXED VERSION
 async function mint() {
   try {
-    // Validate connection
     if (!isConnected || !contractInstance) {
       setStatus("❌ Please connect wallet first", "error");
       return;
     }
 
-    // Validate inputs
     if (!currentMintAmount || currentMintAmount <= 0) {
       setStatus("❌ Please enter a valid amount", "error");
       return;
     }
-    
+
     if (!currentExpiryValue || currentExpiryValue <= 0) {
       setStatus("❌ Please enter a valid expiry time", "error");
       return;
     }
 
-    const address = window.tronWeb.defaultAddress.base58;
+    const to = window.tronWeb.defaultAddress.base58;
     const tokenAmount = Math.floor(currentMintAmount * 10 ** TOKEN_DECIMALS);
-    
+
     setStatus("⏳ Processing mint request...", "info");
-    
-    // Debug parameters
+
     console.log("Mint Parameters:", {
-      address: window.tronWeb.address.fromHex(address),
+      address: window.tronWeb.address.fromHex(to),
       amount: tokenAmount,
       duration: currentExpiryValue,
       hexAddress: window.tronWeb.defaultAddress.hex
     });
 
-    // Check contract ownership
     try {
       const owner = await contractInstance.owner().call();
       console.log("Contract owner:", owner);
@@ -180,34 +176,27 @@ async function mint() {
       return;
     }
 
-    // Execute mint transaction
     setStatus("⏳ Sending transaction to TronLink...", "info");
-    
-    // Send transaction without waiting for response
-    const txPromise = contractInstance.mint(
-      window.tronWeb.address.fromHex(address),
+
+    const tx = await contractInstance.mint(
+      window.tronWeb.address.fromHex(to),
       tokenAmount,
       currentExpiryValue
     ).send({
-      feeLimit: 300000000, // Higher fee limit (300 TRX)
+      feeLimit: 300000000,
       callValue: 0
     });
 
-    // Handle transaction promise
-    const tx = await txPromise;
-    
-    // Get transaction ID
     const txID = tx.transaction ? tx.transaction.txID : tx;
-    
+
     if (!txID) {
       throw new Error("No transaction ID received");
     }
-    
+
     setStatus("⏳ Waiting for transaction confirmation...", "info");
-    
-    // Wait for transaction confirmation
+
     const txInfo = await waitForTransactionConfirmation(txID);
-    
+
     if (txInfo.receipt && txInfo.receipt.result === 'SUCCESS') {
       setStatus(`✅ Mint successful! <a href="https://nile.tronscan.org/#/transaction/${txID}" target="_blank">View on Tronscan</a>`, "success");
       document.getElementById("mint-amount").value = "";
@@ -219,8 +208,7 @@ async function mint() {
     }
   } catch (e) {
     console.error("Mint error:", e);
-    
-    // Handle specific errors
+
     let errorMsg = "Mint failed";
     if (e.message.includes("revert")) {
       errorMsg = "Contract reverted transaction";
@@ -237,7 +225,7 @@ async function mint() {
     } else {
       errorMsg = e.message || "Unknown error";
     }
-    
+
     setStatus(`❌ ${errorMsg}`, "error");
   }
 }
@@ -246,13 +234,13 @@ async function mint() {
 async function waitForTransactionConfirmation(txID) {
   return new Promise((resolve, reject) => {
     let attempts = 0;
-    const maxAttempts = 30; // 30 attempts * 2 seconds = 60 seconds timeout
-    
+    const maxAttempts = 30;
+
     const checkInterval = setInterval(async () => {
       try {
         attempts++;
         const txInfo = await window.tronWeb.trx.getTransactionInfo(txID);
-        
+
         if (txInfo) {
           clearInterval(checkInterval);
           resolve(txInfo);
@@ -266,6 +254,6 @@ async function waitForTransactionConfirmation(txID) {
           reject(new Error("Transaction confirmation timeout"));
         }
       }
-    }, 2000); // Check every 2 seconds
+    }, 2000);
   });
 }
