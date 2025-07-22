@@ -30,24 +30,11 @@ const CONTRACT_ABI = [
 ];
 
 // State variables
-let currentMintAmount = 0;
-let currentExpiryValue = 3600; // Default to 1 hour
 let contractInstance = null;
 let isConnected = false;
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function() {
-  // Set up event listeners
-  document.getElementById("mint-amount").addEventListener("input", function(e) {
-    currentMintAmount = parseFloat(e.target.value) || 0;
-    console.log("Amount updated to:", currentMintAmount);
-  });
-  
-  document.getElementById("expiry").addEventListener("input", function(e) {
-    currentExpiryValue = parseInt(e.target.value) || 0;
-    console.log("Expiry updated to:", currentExpiryValue);
-  });
-  
   // Initialize UI
   updateUI();
   
@@ -134,40 +121,46 @@ async function connectWallet() {
   }
 }
 
-// Mint tokens - FIXED VERSION
+// Mint tokens - CRITICAL FIX APPLIED
 async function mint() {
   try {
+    // Validate connection
     if (!isConnected || !contractInstance) {
       setStatus("❌ Please connect wallet first", "error");
       return;
     }
 
-    if (!currentMintAmount || currentMintAmount <= 0) {
-      setStatus("❌ Please enter a valid amount", "error");
+    // Get input values
+    const amountInput = document.getElementById("mint-amount").value;
+    const expiryInput = document.getElementById("expiry").value;
+
+    // Validate inputs
+    if (!amountInput || parseFloat(amountInput) <= 0) {
+      setStatus("❌ Please enter a valid amount (min 1 token)", "error");
+      return;
+    }
+    
+    if (!expiryInput || parseInt(expiryInput) < 60) {
+      setStatus("❌ Please enter a valid expiry time (min 60 seconds)", "error");
       return;
     }
 
-    if (!currentExpiryValue || currentExpiryValue <= 0) {
-      setStatus("❌ Please enter a valid expiry time", "error");
-      return;
-    }
-
-    const to = window.tronWeb.defaultAddress.base58;
-    const tokenAmount = Math.floor(currentMintAmount * 10 ** TOKEN_DECIMALS);
-
+    // Convert values
+    const tokenAmount = Math.floor(parseFloat(amountInput) * 10 ** TOKEN_DECIMALS);
+    const expiryValue = parseInt(expiryInput);
+    
+    // Get hex-formatted address (CRITICAL FIX)
+    const hexAddress = window.tronWeb.address.toHex(tronWeb.defaultAddress.base58);
+    
     setStatus("⏳ Processing mint request...", "info");
 
-    console.log("Mint Parameters:", {
-      address: window.tronWeb.address.fromHex(to),
-      amount: tokenAmount,
-      duration: currentExpiryValue,
-      hexAddress: window.tronWeb.defaultAddress.hex
-    });
-
+    // Verify contract ownership
     try {
       const owner = await contractInstance.owner().call();
       console.log("Contract owner:", owner);
-      if (owner !== window.tronWeb.defaultAddress.hex.toLowerCase()) {
+      console.log("Connected wallet:", hexAddress);
+      
+      if (owner.toLowerCase() !== hexAddress.toLowerCase()) {
         throw new Error("You are not the contract owner!");
       }
     } catch (ownerErr) {
@@ -178,33 +171,32 @@ async function mint() {
 
     setStatus("⏳ Sending transaction to TronLink...", "info");
 
+    // Execute mint transaction with PROPER ADDRESS FORMATTING
     const tx = await contractInstance.mint(
-      window.tronWeb.address.fromHex(to),
+      hexAddress,  // Use hex-formatted address here
       tokenAmount,
-      currentExpiryValue
+      expiryValue
     ).send({
       feeLimit: 300000000,
       callValue: 0
     });
 
-    const txID = tx.transaction ? tx.transaction.txID : tx;
-
+    const txID = tx.transaction.txID;
+    
     if (!txID) {
       throw new Error("No transaction ID received");
     }
 
     setStatus("⏳ Waiting for transaction confirmation...", "info");
-
     const txInfo = await waitForTransactionConfirmation(txID);
 
     if (txInfo.receipt && txInfo.receipt.result === 'SUCCESS') {
       setStatus(`✅ Mint successful! <a href="https://nile.tronscan.org/#/transaction/${txID}" target="_blank">View on Tronscan</a>`, "success");
+      // Clear inputs
       document.getElementById("mint-amount").value = "";
       document.getElementById("expiry").value = "3600";
-      currentMintAmount = 0;
-      currentExpiryValue = 3600;
     } else {
-      throw new Error(`Transaction reverted: ${txInfo.result || 'Unknown reason'}`);
+      throw new Error(`Transaction reverted: ${txInfo.resMessage || 'Unknown reason'}`);
     }
   } catch (e) {
     console.error("Mint error:", e);
@@ -220,6 +212,8 @@ async function mint() {
       errorMsg = "Only contract owner can mint tokens";
     } else if (e.message.includes("Contract rejected")) {
       errorMsg = e.message;
+    } else if (e.message.includes("Invalid address format")) {
+      errorMsg = "Address format error - please reconnect wallet";
     } else if (e.message.includes("No transaction ID")) {
       errorMsg = "TronLink didn't return transaction ID";
     } else {
@@ -235,25 +229,26 @@ async function waitForTransactionConfirmation(txID) {
   return new Promise((resolve, reject) => {
     let attempts = 0;
     const maxAttempts = 30;
+    const checkInterval = 2000;
 
-    const checkInterval = setInterval(async () => {
+    const intervalId = setInterval(async () => {
       try {
         attempts++;
         const txInfo = await window.tronWeb.trx.getTransactionInfo(txID);
 
         if (txInfo) {
-          clearInterval(checkInterval);
+          clearInterval(intervalId);
           resolve(txInfo);
         } else if (attempts >= maxAttempts) {
-          clearInterval(checkInterval);
-          reject(new Error("Transaction confirmation timeout"));
+          clearInterval(intervalId);
+          reject(new Error("Transaction confirmation timeout after 60 seconds"));
         }
       } catch (e) {
         if (attempts >= maxAttempts) {
-          clearInterval(checkInterval);
-          reject(new Error("Transaction confirmation timeout"));
+          clearInterval(intervalId);
+          reject(new Error("Transaction confirmation timeout after 60 seconds"));
         }
       }
-    }, 2000);
+    }, checkInterval);
   });
 }
