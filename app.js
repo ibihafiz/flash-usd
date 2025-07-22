@@ -109,12 +109,32 @@ async function connectWallet() {
     }
 
     await window.tronLink.request({ method: 'tron_requestAccounts' });
-    
+
     // Initialize contract
     contractInstance = await window.tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
     isConnected = true;
-    
+
     updateUI();
+
+    // 🔽 Fetch and show balance after wallet connects
+    const contract = await tronWeb.contract([
+      {
+        "constant": true,
+        "inputs": [{ "name": "_owner", "type": "address" }],
+        "name": "balanceOf",
+        "outputs": [{ "name": "", "type": "uint256" }],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ], CONTRACT_ADDRESS);
+
+    const raw = await contract.balanceOf(tronWeb.defaultAddress.base58).call();
+    const amount = parseFloat(raw.toString()) / 10 ** TOKEN_DECIMALS;
+
+    document.getElementById("balance").innerText = `Balance: ${amount.toFixed(2)} USDT`;
+    document.getElementById("usd-value").innerText = `≈ $${amount.toFixed(2)}`;
+
   } catch (e) {
     console.error("Connection error:", e);
     setStatus(`❌ Connection failed: ${e.message || e}`, "error");
