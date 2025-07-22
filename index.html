@@ -5,7 +5,7 @@
   <title>Flash USDT Minting Portal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    /* Your original CSS remains unchanged */
+    /* CSS remains unchanged from your original */
     :root {
       --primary: #2c3e50;
       --secondary: #3498db;
@@ -327,8 +327,8 @@
       </div>
       <div class="form-group">
         <label for="expiry">Expiry Duration (in seconds)</label>
-        <input type="number" id="expiry" placeholder="Enter expiry time (e.g., 3600)" min="1" value="3600">
-        <p class="info-text">Example: 3600 seconds = 1 hour</p>
+        <input type="number" id="expiry" placeholder="Enter expiry time (e.g., 3600)" min="60" value="3600">
+        <p class="info-text">Example: 3600 seconds = 1 hour (min: 60 seconds)</p>
       </div>
       <button class="btn btn-success btn-block" id="mint" type="button" onclick="mint()">Mint Flash USDT</button>
     </div>
@@ -349,11 +349,11 @@
       </div>
       <div class="token-card">
         <div>Token Name</div>
-        <div class="token-value">USDT</div>
+        <div class="token-value">Flash USDT</div>
       </div>
       <div class="token-card">
         <div>Token Symbol</div>
-        <div class="token-value">USDT</div>
+        <div class="token-value">fUSDT</div>
       </div>
       <div class="token-card">
         <div>Decimals</div>
@@ -403,24 +403,11 @@
     ];
 
     // State variables
-    let currentMintAmount = 0;
-    let currentExpiryValue = 3600; // Default to 1 hour
     let contractInstance = null;
     let isConnected = false;
 
     // Initialize on page load
     document.addEventListener("DOMContentLoaded", function() {
-      // Set up event listeners
-      document.getElementById("mint-amount").addEventListener("input", function(e) {
-        currentMintAmount = parseFloat(e.target.value) || 0;
-        console.log("Amount updated to:", currentMintAmount);
-      });
-      
-      document.getElementById("expiry").addEventListener("input", function(e) {
-        currentExpiryValue = parseInt(e.target.value) || 0;
-        console.log("Expiry updated to:", currentExpiryValue);
-      });
-      
       // Initialize UI
       updateUI();
       
@@ -507,6 +494,24 @@
       }
     }
 
+    // Helper function to wait for transaction confirmation
+    async function waitForTransactionConfirmation(txID) {
+      return new Promise((resolve) => {
+        const checkInterval = setInterval(async () => {
+          try {
+            const txInfo = await window.tronWeb.trx.getTransactionInfo(txID);
+            if (txInfo && txInfo.id) {
+              clearInterval(checkInterval);
+              resolve(txInfo);
+            }
+          } catch (e) {
+            // Ignore and try again
+            console.log('Waiting for confirmation...');
+          }
+        }, 1000);
+      });
+    }
+
     // Mint tokens
     async function mint() {
       try {
@@ -516,42 +521,55 @@
           return;
         }
 
+        // Get input values
+        const amountInput = document.getElementById("mint-amount").value;
+        const expiryInput = document.getElementById("expiry").value;
+
         // Validate inputs
-        if (!currentMintAmount || currentMintAmount <= 0) {
-          setStatus("❌ Please enter a valid amount", "error");
+        if (!amountInput || parseFloat(amountInput) <= 0) {
+          setStatus("❌ Please enter a valid amount (min 1 token)", "error");
           return;
         }
         
-        if (!currentExpiryValue || currentExpiryValue <= 0) {
-          setStatus("❌ Please enter a valid expiry time", "error");
+        if (!expiryInput || parseInt(expiryInput) < 60) {
+          setStatus("❌ Please enter a valid expiry time (min 60 seconds)", "error");
           return;
         }
 
-        const address = window.tronWeb.defaultAddress.base58;
-        const tokenAmount = Math.floor(currentMintAmount * 10 ** TOKEN_DECIMALS);
+        // Convert values
+        const tokenAmount = Math.floor(parseFloat(amountInput) * 10 ** TOKEN_DECIMALS);
+        const expiryValue = parseInt(expiryInput);
+        
+        // Convert address to hex format (required by contract)
+        const hexAddress = window.tronWeb.address.toHex(tronWeb.defaultAddress.base58);
         
         setStatus("⏳ Processing mint request...", "info");
 
         // Execute mint transaction
         const tx = await contractInstance.mint(
-          address, 
+          hexAddress,  // Use hex-formatted address
           tokenAmount, 
-          currentExpiryValue
+          expiryValue
         ).send({
           feeLimit: 150000000,
           callValue: 0
         });
 
+        setStatus("⏳ Transaction sent. Waiting for confirmation...", "info");
+        
+        // Wait for transaction confirmation
+        const txInfo = await waitForTransactionConfirmation(tx.transaction.txID);
+        
         // Handle transaction response
-        if (tx && tx.result === true) {
+        if (txInfo && txInfo.receipt && txInfo.receipt.result === 'SUCCESS') {
           setStatus(`✅ Mint successful! TX: ${tx.transaction.txID}`, "success");
+          
           // Clear inputs
           document.getElementById("mint-amount").value = "";
           document.getElementById("expiry").value = "3600";
-          currentMintAmount = 0;
-          currentExpiryValue = 3600;
         } else {
-          setStatus("❌ Transaction failed: No result received", "error");
+          const reason = txInfo.resMessage || "No result received";
+          setStatus(`❌ Transaction failed: ${reason}`, "error");
         }
       } catch (e) {
         console.error("Mint error:", e);
@@ -566,6 +584,8 @@
           errorMsg = "Insufficient energy/bandwidth - get more test TRX";
         } else if (e.message.includes("onlyOwner")) {
           errorMsg = "Only contract owner can mint tokens";
+        } else if (e.message.includes("Invalid address format")) {
+          errorMsg = "Address format error - please reconnect wallet";
         } else {
           errorMsg = e.message || "Unknown error";
         }
