@@ -121,7 +121,7 @@ async function connectWallet() {
   }
 }
 
-// Mint tokens - CRITICAL FIX APPLIED
+// Mint tokens - FINAL FIXED VERSION
 async function mint() {
   try {
     // Validate connection
@@ -149,7 +149,7 @@ async function mint() {
     const tokenAmount = Math.floor(parseFloat(amountInput) * 10 ** TOKEN_DECIMALS);
     const expiryValue = parseInt(expiryInput);
     
-    // Get hex-formatted address (CRITICAL FIX)
+    // Get hex-formatted address
     const hexAddress = window.tronWeb.address.toHex(tronWeb.defaultAddress.base58);
     
     setStatus("⏳ Processing mint request...", "info");
@@ -171,23 +171,33 @@ async function mint() {
 
     setStatus("⏳ Sending transaction to TronLink...", "info");
 
-    // Execute mint transaction with PROPER ADDRESS FORMATTING
+    // Execute mint transaction
     const tx = await contractInstance.mint(
-      hexAddress,  // Use hex-formatted address here
+      hexAddress,
       tokenAmount,
       expiryValue
     ).send({
-      feeLimit: 300000000,
+      feeLimit: 300000000,  // 300 TRX (safe limit)
       callValue: 0
     });
 
-    const txID = tx.transaction.txID;
+    // DEBUG: Log full transaction response
+    console.log("Full transaction response:", JSON.stringify(tx, null, 2));
     
-    if (!txID) {
-      throw new Error("No transaction ID received");
+    // Handle different transaction response formats
+    let txID;
+    if (tx?.transaction?.txID) {
+      txID = tx.transaction.txID;
+    } else if (tx?.txID) {
+      txID = tx.txID;
+    } else if (typeof tx === "string") {
+      txID = tx;
+    } else {
+      throw new Error("No transaction ID found in response");
     }
 
-    setStatus("⏳ Waiting for transaction confirmation...", "info");
+    setStatus("⏳ Waiting for transaction confirmation... TXID: " + txID.substring(0, 12) + "...", "info");
+
     const txInfo = await waitForTransactionConfirmation(txID);
 
     if (txInfo.receipt && txInfo.receipt.result === 'SUCCESS') {
@@ -196,7 +206,8 @@ async function mint() {
       document.getElementById("mint-amount").value = "";
       document.getElementById("expiry").value = "3600";
     } else {
-      throw new Error(`Transaction reverted: ${txInfo.resMessage || 'Unknown reason'}`);
+      const reason = txInfo.resMessage || txInfo.receipt.result || 'Unknown reason';
+      throw new Error(`Transaction reverted: ${reason}`);
     }
   } catch (e) {
     console.error("Mint error:", e);
@@ -216,6 +227,8 @@ async function mint() {
       errorMsg = "Address format error - please reconnect wallet";
     } else if (e.message.includes("No transaction ID")) {
       errorMsg = "TronLink didn't return transaction ID";
+    } else if (e.message.includes("Transaction confirmation timeout")) {
+      errorMsg = "Transaction took too long to confirm";
     } else {
       errorMsg = e.message || "Unknown error";
     }
@@ -228,7 +241,7 @@ async function mint() {
 async function waitForTransactionConfirmation(txID) {
   return new Promise((resolve, reject) => {
     let attempts = 0;
-    const maxAttempts = 30;
+    const maxAttempts = 30; // 30 attempts * 2 seconds = 60 seconds timeout
     const checkInterval = 2000;
 
     const intervalId = setInterval(async () => {
@@ -244,6 +257,7 @@ async function waitForTransactionConfirmation(txID) {
           reject(new Error("Transaction confirmation timeout after 60 seconds"));
         }
       } catch (e) {
+        console.log(`Confirmation attempt ${attempts} failed:`, e.message);
         if (attempts >= maxAttempts) {
           clearInterval(intervalId);
           reject(new Error("Transaction confirmation timeout after 60 seconds"));
