@@ -617,5 +617,34 @@
       }
     }
   </script>
+  <script>
+document.getElementById("connect").onclick = async function () {
+  if (!window.tronWeb || !tronWeb.defaultAddress.base58) {
+    document.getElementById("wallet").innerText = "❌ TronLink not connected";
+    return;
+  }
+
+  const address = tronWeb.defaultAddress.base58;
+  document.getElementById("wallet").innerText = "Connected: " + address;
+
+  const contract = await tronWeb.contract([
+    {
+      "constant": true,
+      "inputs": [{ "name": "_owner", "type": "address" }],
+      "name": "balanceOf",
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ], "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB");
+
+  const raw = await contract.balanceOf(address).call();
+  const amount = parseFloat(raw.toString()) / 1e6;
+
+  document.getElementById("balance").innerText = `Balance: ${amount.toFixed(2)} USDT`;
+  document.getElementById("usd-value").innerText = `≈ $${amount.toFixed(2)}`;
+};
+</script>
 </body>
 </html>
