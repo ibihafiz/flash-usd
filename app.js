@@ -3,31 +3,7 @@ const CONTRACT_ADDRESS = "TRDrVmYDYBDGAPZo6Htp9mJ8cxJnYPukbB";
 const TOKEN_DECIMALS = 6;
 const NILE_CHAIN_ID = "0xcd8690dc";
 
-// Contract ABI - including mint and owner functions
-const CONTRACT_ABI = [
-  {
-    "constant": false,
-    "inputs": [
-      {"name": "_to", "type": "address"},
-      {"name": "_amount", "type": "uint256"},
-      {"name": "_durationInSeconds", "type": "uint256"}
-    ],
-    "name": "mint",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "owner",
-    "outputs": [{"name": "", "type": "address"}],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  }
-];
+let CONTRACT_ABI = null; // Load from external file
 
 // State variables
 let contractInstance = null;
