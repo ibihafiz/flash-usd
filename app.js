@@ -121,7 +121,7 @@ async function connectWallet() {
   }
 }
 
-// Mint tokens - FINAL FIXED VERSION
+// Mint tokens - ULTIMATE FIXED VERSION
 async function mint() {
   try {
     // Validate connection
@@ -171,33 +171,77 @@ async function mint() {
 
     setStatus("⏳ Sending transaction to TronLink...", "info");
 
-    // Execute mint transaction
-    const tx = await contractInstance.mint(
-      hexAddress,
-      tokenAmount,
-      expiryValue
-    ).send({
-      feeLimit: 300000000,  // 300 TRX (safe limit)
-      callValue: 0
-    });
-
-    // DEBUG: Log full transaction response
-    console.log("Full transaction response:", JSON.stringify(tx, null, 2));
-    
-    // Handle different transaction response formats
+    // Execute mint transaction with ULTRA-ROBUST response handling
     let txID;
-    if (tx?.transaction?.txID) {
-      txID = tx.transaction.txID;
-    } else if (tx?.txID) {
-      txID = tx.txID;
-    } else if (typeof tx === "string") {
-      txID = tx;
-    } else {
-      throw new Error("No transaction ID found in response");
+    try {
+      const txResponse = await contractInstance.mint(
+        hexAddress,
+        tokenAmount,
+        expiryValue
+      ).send({
+        feeLimit: 300000000,  // 300 TRX (safe limit)
+        callValue: 0
+      });
+
+      console.log("Raw transaction response:", txResponse);
+
+      // Handle every possible response format
+      if (typeof txResponse === "string") {
+        // Case 1: Direct TXID string
+        txID = txResponse;
+        console.log("Extracted TXID (string format):", txID);
+      } else if (txResponse?.txID) {
+        // Case 2: Object with txID property
+        txID = txResponse.txID;
+        console.log("Extracted TXID (txID property):", txID);
+      } else if (txResponse?.transaction?.txID) {
+        // Case 3: Nested transaction object
+        txID = txResponse.transaction.txID;
+        console.log("Extracted TXID (transaction.txID):", txID);
+      } else if (txResponse?.result?.txid) {
+        // Case 4: Some extensions use 'txid'
+        txID = txResponse.result.txid;
+        console.log("Extracted TXID (result.txid):", txID);
+      } else if (txResponse?.txid) {
+        // Case 5: Direct txid property
+        txID = txResponse.txid;
+        console.log("Extracted TXID (txid property):", txID);
+      } else {
+        // Final fallback - try to extract from any possible location
+        txID = findTransactionID(txResponse);
+        console.log("Extracted TXID (deep scan):", txID);
+      }
+    } catch (sendError) {
+      // Handle errors from the send() method itself
+      console.error("Transaction send error:", sendError);
+      
+      // Special handling for user rejection
+      if (sendError.message.includes("denied") || sendError.code === 4001) {
+        throw new Error("Transaction denied by user");
+      }
+      
+      // Handle insufficient energy
+      if (sendError.message.includes("bandwidth") || sendError.message.includes("energy")) {
+        throw new Error("Insufficient energy/bandwidth - add more TRX");
+      }
+      
+      // Handle contract reverts
+      if (sendError.message.includes("revert")) {
+        throw new Error("Contract reverted transaction: " + (sendError.receipt?.resultMessage || "Check contract"));
+      }
+      
+      // Rethrow with original message
+      throw new Error(`Transaction failed: ${sendError.message || "Unknown send error"}`);
     }
 
-    setStatus("⏳ Waiting for transaction confirmation... TXID: " + txID.substring(0, 12) + "...", "info");
+    // If we still don't have a TXID, throw error
+    if (!txID) {
+      throw new Error("No transaction ID received after send operation");
+    }
 
+    setStatus(`⏳ Waiting for confirmation... TX: ${txID.substring(0, 10)}...`, "info");
+
+    // Wait for confirmation with enhanced logging
     const txInfo = await waitForTransactionConfirmation(txID);
 
     if (txInfo.receipt && txInfo.receipt.result === 'SUCCESS') {
@@ -206,63 +250,118 @@ async function mint() {
       document.getElementById("mint-amount").value = "";
       document.getElementById("expiry").value = "3600";
     } else {
-      const reason = txInfo.resMessage || txInfo.receipt.result || 'Unknown reason';
+      const reason = txInfo.resMessage || (txInfo.receipt ? txInfo.receipt.result : 'Unknown reason');
       throw new Error(`Transaction reverted: ${reason}`);
     }
   } catch (e) {
     console.error("Mint error:", e);
-
-    let errorMsg = "Mint failed";
-    if (e.message.includes("revert")) {
-      errorMsg = "Contract reverted transaction";
-    } else if (e.message.includes("denied")) {
-      errorMsg = "Transaction denied by user";
-    } else if (e.message.includes("insufficient")) {
-      errorMsg = "Insufficient energy/bandwidth - get more test TRX";
-    } else if (e.message.includes("onlyOwner")) {
-      errorMsg = "Only contract owner can mint tokens";
-    } else if (e.message.includes("Contract rejected")) {
-      errorMsg = e.message;
-    } else if (e.message.includes("Invalid address format")) {
-      errorMsg = "Address format error - please reconnect wallet";
-    } else if (e.message.includes("No transaction ID")) {
-      errorMsg = "TronLink didn't return transaction ID";
-    } else if (e.message.includes("Transaction confirmation timeout")) {
-      errorMsg = "Transaction took too long to confirm";
-    } else {
-      errorMsg = e.message || "Unknown error";
+    
+    // Simplify error display
+    let displayMessage = e.message;
+    
+    // Handle long error messages
+    if (displayMessage.length > 80) {
+      displayMessage = displayMessage.substring(0, 80) + "...";
     }
-
-    setStatus(`❌ ${errorMsg}`, "error");
+    
+    setStatus(`❌ ${displayMessage}`, "error");
   }
 }
 
-// Helper to wait for transaction confirmation
+// Helper to find TXID in any response format
+function findTransactionID(response) {
+  if (!response) return null;
+  
+  console.log("Searching for TXID in:", response);
+  
+  // Check all possible locations
+  const possiblePaths = [
+    'transaction.txID',
+    'txID',
+    'txid',
+    'result.txid',
+    'transactionId',
+    'id',
+    'hash',
+    'transactionHash',
+    'response.txID',
+    'data.result.txid'
+  ];
+  
+  for (const path of possiblePaths) {
+    const parts = path.split('.');
+    let value = response;
+    let validPath = true;
+    
+    for (const part of parts) {
+      if (value && value.hasOwnProperty(part)) {
+        value = value[part];
+      } else {
+        validPath = false;
+        break;
+      }
+    }
+    
+    if (validPath && value && typeof value === 'string' && value.length > 10) {
+      console.log(`Found TXID at path '${path}':`, value);
+      return value;
+    }
+  }
+  
+  // Deep scan if not found
+  try {
+    const json = JSON.stringify(response);
+    const txIDMatch = json.match(/"tx[Ii][Dd]":\s*"([a-fA-F0-9]{64})"/);
+    if (txIDMatch && txIDMatch[1]) {
+      console.log("Found TXID via regex:", txIDMatch[1]);
+      return txIDMatch[1];
+    }
+    
+    // Look for any 64-character hex string (TXID pattern)
+    const anyTxIDMatch = json.match(/"([a-fA-F0-9]{64})"/);
+    if (anyTxIDMatch && anyTxIDMatch[1]) {
+      console.log("Found potential TXID via hex pattern:", anyTxIDMatch[1]);
+      return anyTxIDMatch[1];
+    }
+  } catch (e) {
+    console.error("Deep scan failed:", e);
+  }
+  
+  return null;
+}
+
+// Enhanced transaction confirmation
 async function waitForTransactionConfirmation(txID) {
   return new Promise((resolve, reject) => {
     let attempts = 0;
-    const maxAttempts = 30; // 30 attempts * 2 seconds = 60 seconds timeout
-    const checkInterval = 2000;
-
-    const intervalId = setInterval(async () => {
+    const maxAttempts = 45; // 90 seconds (45 attempts * 2 seconds)
+    
+    console.log(`Starting confirmation for TX: ${txID}`);
+    
+    const interval = setInterval(async () => {
       try {
         attempts++;
+        console.log(`Confirmation attempt ${attempts} for TX: ${txID}`);
         const txInfo = await window.tronWeb.trx.getTransactionInfo(txID);
-
-        if (txInfo) {
-          clearInterval(intervalId);
+        
+        if (txInfo && txInfo.id) {
+          console.log(`Transaction confirmed: ${txID}`);
+          clearInterval(interval);
           resolve(txInfo);
         } else if (attempts >= maxAttempts) {
-          clearInterval(intervalId);
-          reject(new Error("Transaction confirmation timeout after 60 seconds"));
+          clearInterval(interval);
+          console.error(`Confirmation timed out for TX: ${txID}`);
+          reject(new Error("Transaction confirmation timed out after 90 seconds"));
+        } else {
+          console.log(`Attempt ${attempts}: Transaction not yet confirmed (${txID})`);
         }
       } catch (e) {
-        console.log(`Confirmation attempt ${attempts} failed:`, e.message);
+        console.error(`Confirmation error on attempt ${attempts}:`, e.message);
         if (attempts >= maxAttempts) {
-          clearInterval(intervalId);
-          reject(new Error("Transaction confirmation timeout after 60 seconds"));
+          clearInterval(interval);
+          reject(new Error("Failed to confirm transaction after 90 seconds"));
         }
       }
-    }, checkInterval);
+    }, 2000);
   });
 }
