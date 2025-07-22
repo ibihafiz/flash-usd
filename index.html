@@ -512,7 +512,7 @@
       });
     }
 
-    // Mint tokens
+    // Mint tokens - FIXED VERSION
     async function mint() {
       try {
         // Validate connection
@@ -545,9 +545,9 @@
         
         setStatus("⏳ Processing mint request...", "info");
 
-        // Execute mint transaction
+        // Execute mint transaction - FIXED PART
         const tx = await contractInstance.mint(
-          hexAddress,  // Use hex-formatted address
+          hexAddress,
           tokenAmount, 
           expiryValue
         ).send({
@@ -555,14 +555,29 @@
           callValue: 0
         });
 
+        // FIXED: Handle different possible result formats from TronWeb
+        let txID = null;
+        if (typeof tx === 'string') {
+          txID = tx; // Sometimes TronWeb returns txID as string directly
+        } else if (tx && tx.txID) {
+          txID = tx.txID; // Standard format
+        } else if (tx && tx.txid) {
+          txID = tx.txid; // Alternative format
+        } else if (tx && tx.transaction && tx.transaction.txID) {
+          txID = tx.transaction.txID; // Nested format
+        } else {
+          console.log("Full tx result:", tx);
+          throw new Error("Could not extract transaction ID from result");
+        }
+
         setStatus("⏳ Transaction sent. Waiting for confirmation...", "info");
         
         // Wait for transaction confirmation
-        const txInfo = await waitForTransactionConfirmation(tx.transaction.txID);
+        const txInfo = await waitForTransactionConfirmation(txID);
         
         // Handle transaction response
         if (txInfo && txInfo.receipt && txInfo.receipt.result === 'SUCCESS') {
-          setStatus(`✅ Mint successful! TX: ${tx.transaction.txID}`, "success");
+          setStatus(`✅ Mint successful! TX: ${txID}`, "success");
           
           // Clear inputs
           document.getElementById("mint-amount").value = "";
