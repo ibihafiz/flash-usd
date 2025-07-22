@@ -240,14 +240,19 @@
       margin-top: 20px;
     }
 
-    .token-card {
-      background: rgba(0, 0, 0, 0.2);
-      padding: 15px;
-      border-radius: 10px;
-      text-align: center;
-      flex: 1;
-      min-width: 200px;
-    }
+.token-card {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  flex: 1;
+  min-width: 200px;
+  min-height: 100px;
+  word-break: break-all; /* ⭐ this wraps long addresses/symbols */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
 
     .token-value {
       font-size: 1.3rem;
