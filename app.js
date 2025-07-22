@@ -11,13 +11,19 @@ let isConnected = false;
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function() {
-  // Initialize UI
-  updateUI();
-  
-  // Auto-connect if possible
-  if (window.tronLink && window.tronLink.ready) {
-    connectWallet();
-  }
+  fetch("contractABI.json")
+    .then(response => response.json())
+    .then(data => {
+      CONTRACT_ABI = data;
+      updateUI();
+      if (window.tronLink && window.tronLink.ready) {
+        connectWallet();
+      }
+    })
+    .catch(error => {
+      console.error("❌ Failed to load ABI:", error);
+      setStatus("❌ Failed to load contract ABI", "error");
+    });
 });
 
 // Update UI based on connection status
