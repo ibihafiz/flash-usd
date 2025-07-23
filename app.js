@@ -387,3 +387,27 @@ async function waitForTransactionConfirmation(txID) {
     }, 2000);
   });
 }
+
+// =================================================
+// NETWORK CHANGE HANDLERS (ADD THIS CODE)
+// =================================================
+if (window.tronWeb) {
+  console.log("Setting up TronLink event listeners");
+  
+  window.tronWeb.on("addressChanged", () => {
+    console.log("TronLink address changed - refreshing UI");
+    updateUI();
+  });
+  
+  window.tronWeb.on("disconnect", () => {
+    console.log("TronLink disconnected - reloading page");
+    location.reload();
+  });
+  
+  window.tronWeb.on("nodeChanged", () => {
+    console.log("TronLink node changed - refreshing UI");
+    updateUI();
+  });
+} else {
+  console.log("TronLink not detected at load time");
+}
