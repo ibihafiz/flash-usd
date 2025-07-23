@@ -326,23 +326,29 @@
       </div>
     </div>
 
-    <div class="card">
-<h2 class="card-title">
-  <img src="usdt-icon.png" alt="USDT Icon" width="24" height="24" />
-  Mint Flash USDT
-</h2>
-      <div class="form-group">
-        <label for="mint-amount">Amount to Mint</label>
-        <input type="number" id="mint-amount" placeholder="Enter amount (e.g., 100)" min="1" step="any">
-        <p class="info-text">1 fUSDT = 1 USDT equivalent</p>
-      </div>
-      <div class="form-group">
-        <label for="expiry">Expiry Duration (in seconds)</label>
-        <input type="number" id="expiry" placeholder="Enter expiry time (e.g., 3600)" min="60" value="3600">
-        <p class="info-text">Example: 3600 seconds = 1 hour (min: 60 seconds)</p>
-      </div>
-      <button class="btn btn-success btn-block" id="mint" type="button" onclick="mint()">Mint Flash USDT</button>
-    </div>
+<div class="card">
+  <h2 class="card-title">
+    <img src="usdt-icon.png" alt="USDT Icon" width="24" height="24" />
+    Mint Flash USDT
+  </h2>
+  <div class="form-group">
+    <label for="mint-amount">Amount to Mint</label>
+    <input type="number" id="mint-amount" placeholder="Enter amount (e.g., 100)" min="1" step="any">
+    <p class="info-text">1 fUSDT = 1 USDT equivalent</p>
+  </div>
+  <div class="form-group">
+    <label for="expiry">Expiry Duration (in seconds)</label>
+    <input type="number" id="expiry" placeholder="Enter expiry time (e.g., 3600)" min="60" value="3600">
+    <p class="info-text">Example: 3600 seconds = 1 hour (min: 60 seconds)</p>
+  </div>
+  <button class="btn btn-success btn-block" id="mint" type="button" onclick="mint()">Mint Flash USDT</button>
+
+  <!-- ✅ These 2 elements were missing -->
+  <div class="form-group" style="margin-top: 15px;">
+    <div id="balance" class="info-text"></div>
+    <div id="usd-value" class="info-text"></div>
+  </div>
+</div>
 
     <div class="card">
       <h2 class="card-title">Transaction Status</h2>
