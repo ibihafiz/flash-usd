@@ -28,13 +28,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Update UI based on connection status
 function updateUI() {
-  console.log("Network check:", tronWeb.fullNode.host);
   const walletIndicator = document.getElementById("walletIndicator");
   const networkIndicator = document.getElementById("networkIndicator");
   const walletAddress = document.getElementById("walletAddress");
   const networkName = document.getElementById("networkName");
   const chainId = document.getElementById("chainId");
   const mintButton = document.getElementById("mint");
+
+  console.log("🔍 Network Check:", tronWeb.fullNode.host);
 
   if (!window.tronWeb || !tronWeb.defaultAddress.base58) {
     walletIndicator.className = "status-indicator";
@@ -50,27 +51,20 @@ function updateUI() {
   const currentAddress = tronWeb.defaultAddress.base58;
   walletIndicator.className = "status-indicator connected";
   walletAddress.textContent = `Connected: ${currentAddress.substring(0, 6)}...${currentAddress.slice(-4)}`;
-  
-const fullNodeHost = tronWeb.fullNode.host.toLowerCase();
-console.log("🔍 Network check:", fullNodeHost);
 
-if (
-  fullNodeHost.includes("mainnet") ||
-  fullNodeHost.includes("api.trongrid.io") ||
-  fullNodeHost.includes("grpc.trongrid.io") ||
-  fullNodeHost.includes("trongrid")
-) {
-  networkIndicator.className = "status-indicator connected";
-  networkName.textContent = "Network: Tron Mainnet";
-  chainId.textContent = `Chain ID: ${MAINNET_CHAIN_ID}`;
-  mintButton.disabled = false;
-  setStatus("✅ Wallet connected to Tron Mainnet. Ready to mint USDT", "success");
-} else {
-  networkIndicator.className = "status-indicator";
-  networkName.textContent = "Network: Wrong Network";
-  chainId.textContent = "Switch to Tron Mainnet";
-  mintButton.disabled = true;
-  setStatus("⚠️ Please switch to Tron Mainnet in TronLink", "warning");
+  if (tronWeb.fullNode.host.toLowerCase().includes("trongrid")) {
+    networkIndicator.className = "status-indicator connected";
+    networkName.textContent = "Network: Tron Mainnet";
+    chainId.textContent = `Chain ID: ${MAINNET_CHAIN_ID}`;
+    mintButton.disabled = false;
+    setStatus("✅ Wallet connected to Tron Mainnet. Ready to mint USDT", "success");
+  } else {
+    networkIndicator.className = "status-indicator";
+    networkName.textContent = "Network: Wrong Network";
+    chainId.textContent = "Switch to Tron Mainnet";
+    mintButton.disabled = true;
+    setStatus("⚠️ Please switch to Tron Mainnet in TronLink", "warning");
+  }
 }
 
 // Set status message
