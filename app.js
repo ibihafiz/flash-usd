@@ -167,8 +167,7 @@ const userAddress = tronWeb.defaultAddress.base58;  // Use base58 directly
     try {
       const owner = await contractInstance.owner().call();
       console.log("Contract owner:", owner);
-      console.log("Connected wallet:", hexAddress);
-      
+console.log("Connected wallet:", userAddress);      
 // Compare both in base58 format
 const ownerBase58 = tronWeb.address.fromHex(owner);
 if (ownerBase58 !== userAddress) {
