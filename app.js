@@ -184,14 +184,14 @@ async function mint() {
     // Execute mint transaction with ULTRA-ROBUST response handling
     let txID;
     try {
-      const txResponse = await contractInstance.mint(
-        hexAddress,
-        tokenAmount,
-        expiryValue
-      ).send({
-        feeLimit: 300000000,  // 300 TRX (safe limit)
-        callValue: 0
-      });
+const txResponse = await contractInstance.mint(
+  userAddress,  // Use base58 address
+  tokenAmount,
+  expiryValue
+).send({
+  feeLimit: 300000000,
+  callValue: 0
+});
 
       console.log("Raw transaction response:", txResponse);
 
