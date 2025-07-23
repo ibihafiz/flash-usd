@@ -1,5 +1,5 @@
 // Global contract information
-const CONTRACT_ADDRESS = "TJHuBTy7UrvFsAPsZ3C19Jw85VgXWinsNE";
+const CONTRACT_ADDRESS = "TXr7XvZ2AhjbbTPZtJ1yMo9XVVKDukuoag";
 const TOKEN_DECIMALS = 6;
 const NILE_CHAIN_ID = "0xcd8690dc";
 
