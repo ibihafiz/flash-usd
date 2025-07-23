@@ -409,18 +409,30 @@ if (window.tronWeb) {
   console.log("Setting up TronLink event listeners");
   
   window.tronWeb.on("addressChanged", () => {
-    console.log("TronLink address changed - refreshing UI");
-    updateUI();
+    try {
+      console.log("TronLink address changed - refreshing UI");
+      updateUI();
+    } catch (e) {
+      console.error("Address change handler error:", e);
+    }
   });
   
   window.tronWeb.on("disconnect", () => {
-    console.log("TronLink disconnected - reloading page");
-    location.reload();
+    try {
+      console.log("TronLink disconnected - reloading page");
+      location.reload();
+    } catch (e) {
+      console.error("Disconnect handler error:", e);
+    }
   });
   
   window.tronWeb.on("nodeChanged", () => {
-    console.log("TronLink node changed - refreshing UI");
-    updateUI();
+    try {
+      console.log("TronLink node changed - refreshing UI");
+      updateUI();
+    } catch (e) {
+      console.error("Node change handler error:", e);
+    }
   });
 } else {
   console.log("TronLink not detected at load time");
