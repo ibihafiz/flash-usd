@@ -131,13 +131,6 @@ async function connectWallet() {
 
     updateUI();
 
-// 🔽 Fetch and show balance after wallet connects
-const raw = await contractInstance.balanceOf(tronWeb.defaultAddress.base58).call();
-const amount = parseFloat(raw.toString()) / 10 ** TOKEN_DECIMALS;
-
-document.getElementById("balance").innerText = `Balance: ${amount.toFixed(2)} USDT`;
-document.getElementById("usd-value").innerText = `≈ $${amount.toFixed(2)}`;
-
 // Mint tokens - ULTIMATE FIXED VERSION
 async function mint() {
   try {
