@@ -50,7 +50,7 @@ function updateUI() {
   walletIndicator.className = "status-indicator connected";
   walletAddress.textContent = `Connected: ${currentAddress.substring(0, 6)}...${currentAddress.slice(-4)}`;
   
-  if (tronWeb.fullNode.host.includes("nile")) {
+if (tronWeb.fullNode.host.includes("mainnet") || tronWeb.fullNode.host.includes("api.trongrid.io")) {
     networkIndicator.className = "status-indicator connected";
     networkName.textContent = "Network: Nile Testnet";
     chainId.textContent = `Chain ID: ${NILE_CHAIN_ID}`;
