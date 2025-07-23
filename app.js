@@ -55,7 +55,7 @@ if (tronWeb.fullNode.host.includes("mainnet") || tronWeb.fullNode.host.includes(
 networkName.textContent = "Network: Tron Mainnet";
 chainId.textContent = `Chain ID: ${MAINNET_CHAIN_ID}`;
     mintButton.disabled = false;
-    setStatus("✅ Wallet connected to Nile Testnet. Ready to mint USDT", "success");
+setStatus("✅ Wallet connected to Tron Mainnet. Ready to mint USDT", "success");
   } else {
     networkIndicator.className = "status-indicator";
     networkName.textContent = "Network: Wrong Network";
