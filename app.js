@@ -170,9 +170,11 @@ async function mint() {
       console.log("Contract owner:", owner);
       console.log("Connected wallet:", hexAddress);
       
-      if (owner.toLowerCase() !== hexAddress.toLowerCase()) {
-        throw new Error("You are not the contract owner!");
-      }
+// Compare both in base58 format
+const ownerBase58 = tronWeb.address.fromHex(owner);
+if (ownerBase58 !== userAddress) {
+  throw new Error("You are not the contract owner!");
+}
     } catch (ownerErr) {
       console.error("Owner check error:", ownerErr);
       setStatus(`❌ Contract error: ${ownerErr.message}`, "error");
