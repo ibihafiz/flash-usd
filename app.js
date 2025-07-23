@@ -155,8 +155,9 @@ async function connectWallet() {
     contractInstance = await window.tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
     isConnected = true;
 
-    updateUI();
-
+    // Add slight delay to allow wallet to fully initialize
+    setTimeout(() => updateUI(), 300);
+    
 // Mint tokens - ULTIMATE FIXED VERSION
 async function mint() {
   try {
