@@ -8,18 +8,20 @@ let CONTRACT_ABI = null; // Load from external file
 let contractInstance = null;
 let isConnected = false;
 
-// Initialize on page load
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   fetch("contractABI.json")
     .then(response => response.json())
-    .then(data => {
+    .then(async (data) => {
       CONTRACT_ABI = data;
-      updateUI().then(() => {
-        document.getElementById("mint").addEventListener("click", mint);
-        if (window.tronLink && window.tronLink.ready) {
-          connectWallet();
+      document.getElementById("mint").addEventListener("click", mint);
+
+      // ✅ Wait for TronWeb to be ready before calling connectWallet
+      const waitForTronWeb = setInterval(() => {
+        if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+          clearInterval(waitForTronWeb);
+          connectWallet(); // now safe
         }
-      });
+      }, 500);
     })
     .catch(error => {
       console.error("❌ Failed to load ABI:", error);
