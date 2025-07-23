@@ -59,7 +59,7 @@ setStatus("✅ Wallet connected to Tron Mainnet. Ready to mint USDT", "success")
   } else {
     networkIndicator.className = "status-indicator";
     networkName.textContent = "Network: Wrong Network";
-    chainId.textContent = "Switch to Nile Testnet";
+chainId.textContent = "Switch to Tron Mainnet";
     mintButton.disabled = true;
     setStatus("⚠️ Please switch to Nile Testnet in TronLink", "warning");
   }
