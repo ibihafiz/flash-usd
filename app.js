@@ -1,7 +1,7 @@
 // Global contract information
 const CONTRACT_ADDRESS = "TXr7XvZ2AhjbbTPZtJ1yMo9XVVKDukuoag";
 const TOKEN_DECIMALS = 6;
-const NILE_CHAIN_ID = "0xcd8690dc";
+const MAINNET_CHAIN_ID = "0x2b6653dc";
 
 let CONTRACT_ABI = null; // Load from external file
 
