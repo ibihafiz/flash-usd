@@ -53,7 +53,7 @@ function updateUI() {
 if (tronWeb.fullNode.host.includes("mainnet") || tronWeb.fullNode.host.includes("api.trongrid.io")) {
     networkIndicator.className = "status-indicator connected";
 networkName.textContent = "Network: Tron Mainnet";
-    chainId.textContent = `Chain ID: ${NILE_CHAIN_ID}`;
+chainId.textContent = `Chain ID: ${MAINNET_CHAIN_ID}`;
     mintButton.disabled = false;
     setStatus("✅ Wallet connected to Nile Testnet. Ready to mint USDT", "success");
   } else {
