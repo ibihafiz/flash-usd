@@ -160,8 +160,7 @@ async function mint() {
     const expiryValue = parseInt(expiryInput);
     
     // Get hex-formatted address
-    const hexAddress = window.tronWeb.address.toHex(tronWeb.defaultAddress.base58);
-    
+const userAddress = tronWeb.defaultAddress.base58;  // Use base58 directly    
     setStatus("⏳ Processing mint request...", "info");
 
     // Verify contract ownership
