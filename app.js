@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Update UI based on connection status
 function updateUI() {
+  console.log("Network check:", tronWeb.fullNode.host);
   const walletIndicator = document.getElementById("walletIndicator");
   const networkIndicator = document.getElementById("networkIndicator");
   const walletAddress = document.getElementById("walletAddress");
