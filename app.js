@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", function() {
     .then(data => {
       CONTRACT_ABI = data;
       updateUI();
+            document.getElementById("mint").addEventListener("click", mint);
       if (window.tronLink && window.tronLink.ready) {
         connectWallet();
       }
