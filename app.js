@@ -51,7 +51,15 @@ function updateUI() {
   walletIndicator.className = "status-indicator connected";
   walletAddress.textContent = `Connected: ${currentAddress.substring(0, 6)}...${currentAddress.slice(-4)}`;
   
-if (tronWeb.fullNode.host.includes("trongrid")) {
+const fullNodeHost = tronWeb.fullNode.host.toLowerCase();
+console.log("🔍 Network check:", fullNodeHost);
+
+if (
+  fullNodeHost.includes("mainnet") ||
+  fullNodeHost.includes("api.trongrid.io") ||
+  fullNodeHost.includes("grpc.trongrid.io") ||
+  fullNodeHost.includes("trongrid")
+) {
   networkIndicator.className = "status-indicator connected";
   networkName.textContent = "Network: Tron Mainnet";
   chainId.textContent = `Chain ID: ${MAINNET_CHAIN_ID}`;
