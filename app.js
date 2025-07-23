@@ -75,18 +75,7 @@ async function updateUI() {
         console.error("Balance fetch error:", e);
       }
 
-          // Ensure contract instance is available (CRITICAL FIX)
-    if (!contractInstance) {
-      try {
-        contractInstance = await window.tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
-        isConnected = true;
-        console.log("Contract instance initialized");
-      } catch (e) {
-        console.error("Contract initialization failed:", e);
-        setStatus("❌ Failed to initialize contract. Please try reconnecting wallet.", "error");
-        return; // Exit early
-      }
-    }
+
       // Add owner check to disable mint button if not owner
       try {
         const ownerHex = await contractInstance.owner().call();
