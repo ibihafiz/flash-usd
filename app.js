@@ -38,7 +38,7 @@ async function updateUI() {
   const chainId = document.getElementById("chainId");
   const mintButton = document.getElementById("mint");
 
-  if (!window.tronWeb || !tronWeb.defaultAddress.base58) {
+if (!window.tronWeb || !window.tronWeb.defaultAddress || !window.tronWeb.defaultAddress.base58) {
     walletIndicator.className = "status-indicator";
     networkIndicator.className = "status-indicator";
     walletAddress.textContent = "Wallet not connected";
