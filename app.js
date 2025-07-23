@@ -52,7 +52,9 @@ function updateUI() {
   walletIndicator.className = "status-indicator connected";
   walletAddress.textContent = `Connected: ${currentAddress.substring(0, 6)}...${currentAddress.slice(-4)}`;
 
-  if (tronWeb.fullNode.host.toLowerCase().includes("trongrid")) {
+  const node = tronWeb.fullNode.host.toLowerCase();
+
+  if (node.includes("trongrid") || node.includes("api.trongrid.io") || node.includes("mainnet")) {
     networkIndicator.className = "status-indicator connected";
     networkName.textContent = "Network: Tron Mainnet";
     chainId.textContent = `Chain ID: ${MAINNET_CHAIN_ID}`;
@@ -65,13 +67,6 @@ function updateUI() {
     mintButton.disabled = true;
     setStatus("⚠️ Please switch to Tron Mainnet in TronLink", "warning");
   }
-}
-
-// Set status message
-function setStatus(message, type = "info") {
-  const statusElement = document.getElementById("status");
-  statusElement.innerHTML = `<span>${getStatusIcon(type)}</span> ${message}`;
-  statusElement.className = `status-message ${type}`;
 }
 
 // Get status icon
