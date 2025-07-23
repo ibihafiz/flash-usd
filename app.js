@@ -26,16 +26,14 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
-// Update UI based on connection status
-function updateUI() {
+// Update UI based on connection status (MAINNET-FIXED)
+async function updateUI() {
   const walletIndicator = document.getElementById("walletIndicator");
   const networkIndicator = document.getElementById("networkIndicator");
   const walletAddress = document.getElementById("walletAddress");
   const networkName = document.getElementById("networkName");
   const chainId = document.getElementById("chainId");
   const mintButton = document.getElementById("mint");
-
-  console.log("🔍 Network Check:", tronWeb.fullNode.host);
 
   if (!window.tronWeb || !tronWeb.defaultAddress.base58) {
     walletIndicator.className = "status-indicator";
@@ -52,20 +50,58 @@ function updateUI() {
   walletIndicator.className = "status-indicator connected";
   walletAddress.textContent = `Connected: ${currentAddress.substring(0, 6)}...${currentAddress.slice(-4)}`;
 
-  const node = tronWeb.fullNode.host.toLowerCase();
+  try {
+    // Get actual chain ID - MAINNET FIX
+    const actualChainId = await tronWeb.trx.getChainId();
+    console.log("Actual Chain ID:", actualChainId);
+    console.log("Required Chain ID:", MAINNET_CHAIN_ID);
 
-  if (node.includes("trongrid") || node.includes("api.trongrid.io") || node.includes("mainnet")) {
-    networkIndicator.className = "status-indicator connected";
-    networkName.textContent = "Network: Tron Mainnet";
-    chainId.textContent = `Chain ID: ${MAINNET_CHAIN_ID}`;
-    mintButton.disabled = false;
-    setStatus("✅ Wallet connected to Tron Mainnet. Ready to mint USDT", "success");
-  } else {
+    if (actualChainId === MAINNET_CHAIN_ID) {
+      // Correct network
+      networkIndicator.className = "status-indicator connected";
+      networkName.textContent = "Network: Tron Mainnet";
+      chainId.textContent = `Chain ID: ${actualChainId}`;
+      mintButton.disabled = false;
+      setStatus("✅ Wallet connected to Tron Mainnet. Ready to mint USDT", "success");
+      
+      // Fetch balance only when on correct network
+      try {
+        const raw = await contractInstance.balanceOf(currentAddress).call();
+        const amount = parseFloat(raw.toString()) / 10 ** TOKEN_DECIMALS;
+        document.getElementById("balance").innerText = `Balance: ${amount.toFixed(2)} USDT`;
+        document.getElementById("usd-value").innerText = `≈ $${amount.toFixed(2)}`;
+      } catch (e) {
+        console.error("Balance fetch error:", e);
+      }
+      
+      // Add owner check to disable mint button if not owner
+      try {
+        const ownerHex = await contractInstance.owner().call();
+        const ownerBase58 = tronWeb.address.fromHex(ownerHex);
+        const isOwner = (ownerBase58 === currentAddress);
+        
+        mintButton.disabled = !isOwner;
+        if (!isOwner) {
+          setStatus("ℹ️ Minting disabled: connected wallet is not contract owner", "info");
+        }
+      } catch (ownerErr) {
+        console.error("Owner check error:", ownerErr);
+      }
+    } else {
+      // Wrong network
+      networkIndicator.className = "status-indicator";
+      networkName.textContent = "Network: Wrong Network";
+      chainId.textContent = `Detected: ${actualChainId} | Required: ${MAINNET_CHAIN_ID}`;
+      mintButton.disabled = true;
+      setStatus("⚠️ Please switch to Tron Mainnet in TronLink", "warning");
+    }
+  } catch (error) {
+    console.error("Network check failed:", error);
     networkIndicator.className = "status-indicator";
-    networkName.textContent = "Network: Wrong Network";
-    chainId.textContent = "Switch to Tron Mainnet";
+    networkName.textContent = "Network: Error";
+    chainId.textContent = "Failed to detect network";
     mintButton.disabled = true;
-    setStatus("⚠️ Please switch to Tron Mainnet in TronLink", "warning");
+    setStatus("⚠️ Error detecting network. Please try again.", "warning");
   }
 }
 
