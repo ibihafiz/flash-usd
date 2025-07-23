@@ -14,11 +14,12 @@ document.addEventListener("DOMContentLoaded", function() {
     .then(response => response.json())
     .then(data => {
       CONTRACT_ABI = data;
-      updateUI();
-            document.getElementById("mint").addEventListener("click", mint);
-      if (window.tronLink && window.tronLink.ready) {
-        connectWallet();
-      }
+      updateUI().then(() => {
+        document.getElementById("mint").addEventListener("click", mint);
+        if (window.tronLink && window.tronLink.ready) {
+          connectWallet();
+        }
+      });
     })
     .catch(error => {
       console.error("❌ Failed to load ABI:", error);
