@@ -229,7 +229,7 @@ async function mint() {
     const txInfo = await waitForTransactionConfirmation(txID);
 
     if (txInfo.receipt && txInfo.receipt.result === 'SUCCESS') {
-      setStatus(`✅ Mint successful! <a href="https://nile.tronscan.org/#/transaction/${txID}" target="_blank">View on Tronscan</a>`, "success");
+setStatus(`✅ Mint successful! <a href="https://tronscan.org/#/transaction/${txID}" target="_blank">View on Tronscan</a>`, "success");
       // Clear inputs
       document.getElementById("mint-amount").value = "";
       document.getElementById("expiry").value = "3600";
