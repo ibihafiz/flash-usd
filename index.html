@@ -449,19 +449,21 @@
       walletIndicator.className = "status-indicator connected";
       walletAddress.textContent = `Connected: ${currentAddress.substring(0, 6)}...${currentAddress.slice(-4)}`;
       
-      if (tronWeb.fullNode.host.includes("nile")) {
-        networkIndicator.className = "status-indicator connected";
-        networkName.textContent = "Network: Nile Testnet";
-        chainId.textContent = `Chain ID: ${NILE_CHAIN_ID}`;
-        mintButton.disabled = false;
-        setStatus("✅ Wallet connected to Nile Testnet. Ready to mint USDT", "success");
-      } else {
-        networkIndicator.className = "status-indicator";
-        networkName.textContent = "Network: Wrong Network";
-        chainId.textContent = "Switch to Nile Testnet";
-        mintButton.disabled = true;
-        setStatus("⚠️ Please switch to Nile Testnet in TronLink", "warning");
-      }
+const nodeHost = (tronWeb?.fullNode?.host || "").toLowerCase();
+
+if (nodeHost.includes("trongrid") || nodeHost.includes("mainnet") || nodeHost.includes("api.trongrid.io")) {
+  networkIndicator.className = "status-indicator connected";
+  networkName.textContent = "Network: Tron Mainnet";
+  chainId.textContent = "Chain ID: 0x2b6653dc";
+  mintButton.disabled = false;
+  setStatus("✅ Wallet connected to Tron Mainnet. Ready to mint USDT", "success");
+} else {
+  networkIndicator.className = "status-indicator";
+  networkName.textContent = "Network: Wrong Network";
+  chainId.textContent = "Switch to Tron Mainnet";
+  mintButton.disabled = true;
+  setStatus("⚠️ Please switch to Tron Mainnet in TronLink", "warning");
+}
     }
 
     // Set status message
