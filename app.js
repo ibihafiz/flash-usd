@@ -1,8 +1,7 @@
 // Global contract information
 const CONTRACT_ADDRESS = "TXr7XvZ2AhjbbTPZtJ1yMo9XVVKDukuoag";
 const TOKEN_DECIMALS = 6;
-const MAINNET_CHAIN_ID = "0x2b6653dc";
-
+const MAINNET_CHAIN_ID = "728126428";  // Decimal format for TRON Mainnet
 let CONTRACT_ABI = null; // Load from external file
 
 // State variables
